@@ -9,7 +9,10 @@ namespace Lamie.Domain.Entities
 {
     public class ProductImage
     {
+        public int Id { get; private set; }
+        public int ProductId { get; private set; }
         public string ImageUrl { get; private set; }
+        public bool IsActive { get; private set; }
         public int SortOrder { get; private set; }
 
         internal ProductImage(string imageUrl, int sortOrder)
@@ -19,6 +22,12 @@ namespace Lamie.Domain.Entities
 
             ImageUrl = imageUrl;
             SortOrder = sortOrder;
+            IsActive = true;
+        }
+
+        public void Deactivate()
+        {
+            IsActive = false;
         }
     }
 

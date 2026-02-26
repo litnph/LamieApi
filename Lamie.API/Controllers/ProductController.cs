@@ -19,9 +19,7 @@ namespace Lamie.API.Controllers
         /// Admin: Tạo sản phẩm mới
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> CreateProduct(
-            [FromBody] CreateProductCommand command,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductCommand command, CancellationToken cancellationToken)
         {
             var productId = await _mediator.Send(command, cancellationToken);
 
@@ -36,9 +34,7 @@ namespace Lamie.API.Controllers
         /// Admin: Lấy chi tiết sản phẩm (ví dụ minh họa)
         /// </summary>
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetProductById(
-            int id,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> GetProductById(int id, CancellationToken cancellationToken)
         {
             // Ví dụ: bạn sẽ có GetProductByIdQuery
             // var result = await _mediator.Send(new GetProductByIdQuery(id));

@@ -1,4 +1,5 @@
 using Lamie.API.Middlewares;
+using Lamie.Application;
 using Lamie.Application.Common.Interfaces;
 using Lamie.Application.Users;
 using Lamie.Domain.Repositories;
@@ -6,7 +7,6 @@ using Lamie.Infrastructure.Persistence;
 using Lamie.Infrastructure.Persistence.Repositories;
 using Lamie.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +20,7 @@ builder.Services.AddSwaggerGen();
 
 // MediatR
 builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly())
+    cfg.RegisterServicesFromAssembly(typeof(AssemblyReference).Assembly)
 );
 
 // Database

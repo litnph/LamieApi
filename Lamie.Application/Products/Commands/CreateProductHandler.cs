@@ -1,5 +1,6 @@
 ﻿using Lamie.Domain.Entities;
 using Lamie.Domain.Repositories;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Lamie.Application.Products.Commands
 {
-    public class CreateProductHandler
+    public class CreateProductHandler : IRequestHandler<CreateProductCommand, int>
     {
         private readonly IProductRepository _repository;
 

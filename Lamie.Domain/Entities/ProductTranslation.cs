@@ -9,6 +9,8 @@ namespace Lamie.Domain.Entities
 {
     public class ProductTranslation
     {
+        public int Id { get; private set; }
+        public int ProductId { get; private set; }
         public string LanguageCode { get; private set; }
         public string Name { get; private set; }
         public string Description { get; private set; }

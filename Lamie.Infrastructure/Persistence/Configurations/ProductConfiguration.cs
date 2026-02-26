@@ -34,16 +34,16 @@ namespace Lamie.Infrastructure.Persistence.Configurations
             builder.Property<DateTime>("CreatedAt");
             builder.Property<DateTime?>("UpdatedAt");
 
-            // Aggregate relationship
-            builder.HasMany(p => p.Translations)
-                .WithOne()
-                .HasForeignKey("ProductId")
-                .OnDelete(DeleteBehavior.Cascade);
+            //// Aggregate relationship
+            //builder.HasMany(p => p.Translations)
+            //    .WithOne()
+            //    .HasForeignKey("ProductId")
+            //    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasMany(p => p.Images)
-                .WithOne()
-                .HasForeignKey("ProductId")
-                .OnDelete(DeleteBehavior.Cascade);
+            //builder.HasMany(p => p.Images)
+            //    .WithOne()
+            //    .HasForeignKey("ProductId")
+            //    .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
