@@ -1,17 +1,11 @@
 using Lamie.API.Middlewares;
 using Lamie.Application;
-using Lamie.Application.Common.Interfaces;
-using Lamie.Application.Users;
 using Lamie.Domain.Repositories;
 using Lamie.Infrastructure.Persistence;
 using Lamie.Infrastructure.Persistence.Repositories;
-using Lamie.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-builder.Services.AddScoped<UserService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -35,7 +29,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 // Repository
-builder.Services.AddScoped<ISysUserRepository, SysUserRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 var app = builder.Build();
