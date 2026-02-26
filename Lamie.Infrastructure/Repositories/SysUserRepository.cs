@@ -1,6 +1,6 @@
 ﻿using Lamie.Application.Common.Interfaces;
 using Lamie.Domain.Entities;
-using Lamie.Infrastructure.Infrastructure.Persistence;
+using Lamie.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
