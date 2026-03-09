@@ -8,3 +8,5 @@ Lamie.Infrastructure/bin/
 Lamie.Infrastructure/obj/
 Lamie.Shared/obj/
 .vs/
+Lamie.Shared/bin/
+.vscode/
