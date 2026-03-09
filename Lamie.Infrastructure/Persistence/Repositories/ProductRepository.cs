@@ -31,5 +31,13 @@ namespace Lamie.Infrastructure.Persistence.Repositories
                 .Include(p => p.Images)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
+
+        public async Task<List<Product>?> GetAllAsync()
+        {
+            return await _context.Products
+                .Include(p => p.Translations)
+                .Include(p => p.Images)
+                .ToListAsync();
+        }
     }
 }
