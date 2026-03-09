@@ -1,4 +1,4 @@
-﻿using Lamie.Application.Products.Dtos;
+using Lamie.Application.Products.Dtos;
 using Lamie.Domain.Entities;
 using Lamie.Domain.Repositories;
 using MediatR;
@@ -25,7 +25,8 @@ namespace Lamie.Application.Products.Queries
             GetAllProductsQuery request,
             CancellationToken cancellationToken)
         {
-            return await _repository.GetAllAsync();
+            var products = await _repository.GetAllAsync();
+            return products?.ToList() ?? new List<Product>();
         }
     }
     public class GetProductByIdHandler
