@@ -1,13 +1,39 @@
 using Lamie.API.Middlewares;
+using Lamie.API.Options;
+using Lamie.API.Services;
 using Lamie.Application;
 using Lamie.Domain.Repositories;
 using Lamie.Infrastructure.Persistence;
 using Lamie.Infrastructure.Persistence.Repositories;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(x => x.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value!.Errors
+                        .Select(e => string.IsNullOrWhiteSpace(e.ErrorMessage) ? "Invalid value" : e.ErrorMessage)
+                        .ToArray()
+                );
+
+            return new BadRequestObjectResult(new
+            {
+                success = false,
+                code = "VALIDATION_ERROR",
+                message = "Validation failed",
+                errors
+            });
+        };
+    });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -31,6 +57,22 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Repository
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
+// Supabase Storage
+builder.Services.Configure<SupabaseOptions>(
+    builder.Configuration.GetSection(SupabaseOptions.SectionName)
+);
+builder.Services.AddHttpClient<IObjectStorageService, SupabaseStorageService>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -40,13 +82,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Middlewares (place early to catch exceptions)
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-// Middlewares
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-
+app.UseCors("AllowAll");
 app.MapControllers();
 
 app.Run();

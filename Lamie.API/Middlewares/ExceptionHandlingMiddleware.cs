@@ -1,4 +1,4 @@
-﻿using Lamie.Application.Common.Exceptions;
+using Lamie.Application.Common.Exceptions;
 using Microsoft.AspNetCore.Http;
 using System.Net;
 using System.Text.Json;
@@ -22,6 +22,11 @@ namespace Lamie.API.Middlewares
             }
             catch (BaseException ex)
             {
+                if (context.Response.HasStarted)
+                {
+                    throw;
+                }
+
                 context.Response.ContentType = "application/json";
 
                 context.Response.StatusCode = ex switch
@@ -46,6 +51,11 @@ namespace Lamie.API.Middlewares
             }
             catch (Exception ex)
             {
+                if (context.Response.HasStarted)
+                {
+                    throw;
+                }
+
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 

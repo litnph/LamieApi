@@ -39,7 +39,7 @@ namespace Lamie.Application.Products.Commands
                 product.AddTranslation(
                     t.LanguageCode,
                     t.Name,
-                    t.Description
+                    t.Description ?? string.Empty
                 );
             }
 
@@ -47,8 +47,8 @@ namespace Lamie.Application.Products.Commands
             foreach (var img in command.Images)
             {
                 product.AddImage(
-                    img.ImageUrl,
-                    img.SortOrder
+                    img.ImageUrl ?? string.Empty,
+                    img.SortOrder ?? 0
                 );
             }
 
