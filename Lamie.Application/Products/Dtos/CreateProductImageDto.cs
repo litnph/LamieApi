@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using System.IO;
 
 namespace Lamie.Application.Products.Dtos
 {
@@ -12,6 +12,10 @@ namespace Lamie.Application.Products.Dtos
         public int? Id { get; set; }
         public string? ImageUrl { get; set; } = default!;
         public int? SortOrder { get; set; }
-        public IFormFile File { get; set; } = default!;
+
+        // Dữ liệu file ở dạng trung lập, không phụ thuộc IFormFile
+        public Stream? Content { get; set; }
+        public string? FileName { get; set; }
+        public string? ContentType { get; set; }
     }
 }
