@@ -1,4 +1,4 @@
-namespace Lamie.API.Options;
+namespace Lamie.Infrastructure.Options;
 
 public sealed class SupabaseOptions
 {

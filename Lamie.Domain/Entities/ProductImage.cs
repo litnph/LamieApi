@@ -1,4 +1,4 @@
-﻿using Lamie.Domain.Exceptions;
+using Lamie.Domain.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Lamie.Domain.Entities
 {
-    public class ProductImage
+    public class ProductImage : AuditableEntity
     {
         public int Id { get; private set; }
         public int ProductId { get; private set; }

@@ -1,13 +1,8 @@
+using Lamie.Application.Common.Exceptions;
 using Lamie.Application.Products.Dtos;
 using Lamie.Domain.Entities;
 using Lamie.Domain.Repositories;
 using MediatR;
-using Microsoft.AspNetCore.Http.Features.Authentication;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Lamie.Application.Products.Queries
 {
@@ -43,7 +38,11 @@ namespace Lamie.Application.Products.Queries
             GetProductByIdQuery request,
             CancellationToken cancellationToken)
         {
-            return await _repository.GetByIdAsync(request.Id);
+            var product = await _repository.GetByIdAsync(request.Id);
+            if(product == null)
+                throw new NotFoundException("Product", request.Id);
+
+            return product;
         }
     }
 }

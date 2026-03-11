@@ -1,6 +1,6 @@
 using System.Net;
-using Lamie.API.Options;
 using Microsoft.AspNetCore.Http;
+using Lamie.Infrastructure.Options;
 using Microsoft.Extensions.Options;
 
 namespace Lamie.API.Services;

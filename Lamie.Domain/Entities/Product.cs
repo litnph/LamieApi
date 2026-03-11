@@ -1,4 +1,4 @@
-﻿using Lamie.Domain.Exceptions;
+using Lamie.Domain.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Lamie.Domain.Entities
 {
-    public class Product
+    public class Product : AuditableEntity
     {
         private readonly List<ProductTranslation> _translations = new();
         private readonly List<ProductImage> _images = new();

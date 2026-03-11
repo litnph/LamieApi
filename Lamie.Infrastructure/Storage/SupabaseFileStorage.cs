@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
-using Lamie.API.Options;
 using Lamie.Application.Common.Storage;
+using Lamie.Infrastructure.Options;
 using Microsoft.Extensions.Options;
 
 namespace Lamie.Infrastructure.Storage;
@@ -22,7 +22,7 @@ public sealed class SupabaseFileStorage : IFileStorage
         string contentType,
         CancellationToken cancellationToken = default)
     {
-        if (content == null) throw new InvalidOperationException("Content stream is null.");
+        if (content is null) throw new ArgumentNullException(nameof(content));
         if (string.IsNullOrWhiteSpace(objectPath)) throw new InvalidOperationException("Object path is required.");
 
         var baseUrl = _options.Url?.TrimEnd('/');
@@ -32,8 +32,7 @@ public sealed class SupabaseFileStorage : IFileStorage
 
         var uploadUrl = $"{baseUrl}/storage/v1/object/{Uri.EscapeDataString(_options.StorageBucket)}/{EscapeObjectPath(objectPath)}";
 
-        using var contentStream = content;
-        using var httpContent = new StreamContent(contentStream);
+        using var httpContent = new StreamContent(content);
         httpContent.Headers.ContentType = new MediaTypeHeaderValue(contentType ?? "application/octet-stream");
 
         using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrl)

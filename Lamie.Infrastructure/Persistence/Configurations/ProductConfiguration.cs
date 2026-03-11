@@ -1,4 +1,4 @@
-﻿using Lamie.Domain.Entities;
+using Lamie.Domain.Entities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -31,8 +31,8 @@ namespace Lamie.Infrastructure.Persistence.Configurations
 
             builder.Property(p => p.IsActive);
 
-            builder.Property<DateTime>("CreatedAt");
-            builder.Property<DateTime?>("UpdatedAt");
+            builder.Property(p => p.CreatedAt);
+            builder.Property(p => p.UpdatedAt);
 
             //// Aggregate relationship
             //builder.HasMany(p => p.Translations)
