@@ -1,11 +1,10 @@
 using Lamie.API.Middlewares;
-using Lamie.API.Services;
 using Lamie.Application;
 using Lamie.Application.Common.Storage;
 using Lamie.Domain.Repositories;
+using Lamie.Infrastructure.Options;
 using Lamie.Infrastructure.Persistence;
 using Lamie.Infrastructure.Persistence.Repositories;
-using Lamie.Infrastructure.Options;
 using Lamie.Infrastructure.Storage;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -59,12 +58,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Repository
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
+builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
 
 // Supabase Storage (cho API dùng trực tiếp qua IObjectStorageService)
 builder.Services.Configure<SupabaseOptions>(
     builder.Configuration.GetSection(SupabaseOptions.SectionName)
 );
-builder.Services.AddHttpClient<IObjectStorageService, SupabaseStorageService>();
 
 // File storage abstraction cho Application (Supabase implementation)
 builder.Services.AddHttpClient<IFileStorage, SupabaseFileStorage>();

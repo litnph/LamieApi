@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Lamie.Domain.Entities
 {
-    public class ProductTranslation : AuditableEntity
+    public class ProductTranslation : Entity
     {
         public int Id { get; private set; }
         public int ProductId { get; private set; }

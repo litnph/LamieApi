@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Lamie.Domain.Entities;
 
-public class Tag : AuditableEntity
+public class Tag : Entity
 {
     private readonly List<TagTranslation> _translations = new();
 

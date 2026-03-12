@@ -1,6 +1,6 @@
 namespace Lamie.Domain.Entities;
 
-public class TagTranslation : AuditableEntity
+public class TagTranslation : Entity
 {
     public int Id { get; private set; }
     public int TagId { get; private set; }

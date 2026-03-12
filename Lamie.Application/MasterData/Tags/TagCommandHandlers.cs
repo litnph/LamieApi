@@ -2,20 +2,26 @@ using Lamie.Application.Common.Exceptions;
 using Lamie.Domain.Entities;
 using Lamie.Domain.Repositories;
 using MediatR;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Lamie.Application.MasterData.Tags;
 
 public sealed class CreateTagHandler : IRequestHandler<CreateTagCommand, int>
 {
     private readonly ITagRepository _repository;
+    private readonly ILanguageRepository _languageRepository;
 
-    public CreateTagHandler(ITagRepository repository)
+    public CreateTagHandler(ITagRepository repository, ILanguageRepository languageRepository)
     {
         _repository = repository;
+        _languageRepository = languageRepository;
     }
 
     public async Task<int> Handle(CreateTagCommand request, CancellationToken cancellationToken)
     {
+        await TagValidation.ValidateTranslationsAsync(request.Translations, _languageRepository, cancellationToken);
+
         var tag = new Tag(request.IsActive);
 
         foreach (var t in request.Translations)
@@ -31,14 +37,18 @@ public sealed class CreateTagHandler : IRequestHandler<CreateTagCommand, int>
 public sealed class UpdateTagHandler : IRequestHandler<UpdateTagCommand>
 {
     private readonly ITagRepository _repository;
+    private readonly ILanguageRepository _languageRepository;
 
-    public UpdateTagHandler(ITagRepository repository)
+    public UpdateTagHandler(ITagRepository repository, ILanguageRepository languageRepository)
     {
         _repository = repository;
+        _languageRepository = languageRepository;
     }
 
     public async Task Handle(UpdateTagCommand request, CancellationToken cancellationToken)
     {
+        await TagValidation.ValidateTranslationsAsync(request.Translations, _languageRepository, cancellationToken);
+
         var tag = await _repository.GetByIdAsync(request.Id);
         if (tag is null)
         {
@@ -53,6 +63,53 @@ public sealed class UpdateTagHandler : IRequestHandler<UpdateTagCommand>
         }
 
         await _repository.UpdateAsync(tag);
+    }
+}
+
+internal static class TagValidation
+{
+    public static async Task ValidateTranslationsAsync(
+        IReadOnlyList<TagTranslationInput> translations,
+        ILanguageRepository languageRepository,
+        CancellationToken cancellationToken)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (translations is null || translations.Count == 0)
+        {
+            errors["translations"] = ["At least one translation is required"];
+            throw new ValidationException(errors);
+        }
+
+        for (var i = 0; i < translations.Count; i++)
+        {
+            if (string.IsNullOrWhiteSpace(translations[i].LanguageCode))
+            {
+                errors[$"translations[{i}].languageCode"] = ["LanguageCode is required"];
+            }
+
+            if (string.IsNullOrWhiteSpace(translations[i].Name))
+            {
+                errors[$"translations[{i}].name"] = ["Name is required"];
+            }
+
+            if (!string.IsNullOrWhiteSpace(translations[i].LanguageCode))
+            {
+                var exists = await languageRepository.ExistsAsync(
+                    translations[i].LanguageCode,
+                    cancellationToken);
+
+                if (!exists)
+                {
+                    errors[$"translations[{i}].languageCode"] = ["LanguageCode is not supported"];
+                }
+            }
+        }
+
+        if (errors.Count > 0)
+        {
+            throw new ValidationException(errors);
+        }
     }
 }
 

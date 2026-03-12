@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Lamie.Domain.Entities
 {
-    public class Product : AuditableEntity
+    public class Product : Entity
     {
         private readonly List<ProductTranslation> _translations = new();
         private readonly List<ProductImage> _images = new();

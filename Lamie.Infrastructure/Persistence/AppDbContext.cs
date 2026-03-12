@@ -13,6 +13,8 @@ namespace Lamie.Infrastructure.Persistence
         public DbSet<Tag> Tags => Set<Tag>();
         public DbSet<TagTranslation> TagTranslations => Set<TagTranslation>();
 
+        public DbSet<Language> Languages => Set<Language>();
+
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
@@ -75,7 +77,56 @@ namespace Lamie.Infrastructure.Persistence
                 entity.Property(x => x.Description)
                       .HasColumnName("description");
             });
-        }
 
+            modelBuilder.Entity<Language>(entity =>
+            {
+                entity.ToTable("sys_languages");
+                entity.HasKey(x => x.Code);
+
+                entity.Property(x => x.Code)
+                      .HasColumnName("code");
+
+                entity.Property(x => x.Name)
+                      .HasColumnName("name");
+
+                entity.Property(x => x.IsActive)
+                      .HasColumnName("is_active");
+            });
+        }
+        public override int SaveChanges()
+        {
+            ApplyAudit();
+            return base.SaveChanges();
+        }
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            ApplyAudit();
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+        private void ApplyAudit()
+        {
+            var now = DateTime.UtcNow;
+
+            foreach (var entry in ChangeTracker.Entries<Entity>())
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        entry.Entity.CreatedAt = now;
+                        entry.Entity.CreatedBy = -99;
+                        entry.Entity.CreatedName = "dev";
+                        entry.Entity.UpdatedAt = now;
+                        entry.Entity.UpdatedBy = -99;
+                        entry.Entity.UpdatedName = "dev";
+                        break;
+
+                    case EntityState.Modified:
+                        entry.Entity.UpdatedAt = now;
+                        entry.Entity.UpdatedBy = -100;
+                        entry.Entity.UpdatedName = "test";
+                        break;
+                }
+            }
+        }
     }
 }
