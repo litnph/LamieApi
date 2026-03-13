@@ -1,4 +1,4 @@
-﻿using Lamie.Domain.Entities;
+using Lamie.Domain.Entities;
 using Lamie.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -29,6 +29,11 @@ namespace Lamie.Infrastructure.Persistence.Repositories
             return await _context.Products
                 .Include(p => p.Translations)
                 .Include(p => p.Images)
+                .Include(p => p.Tags)
+                .Include(p => p.Colors)
+                .Include(p => p.Collections)
+                .Include(p => p.Styles)
+                .Include(p => p.Occasions)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
@@ -37,6 +42,11 @@ namespace Lamie.Infrastructure.Persistence.Repositories
             return await _context.Products
                 .Include(p => p.Translations)
                 .Include(p => p.Images)
+                .Include(p => p.Tags)
+                .Include(p => p.Colors)
+                .Include(p => p.Collections)
+                .Include(p => p.Styles)
+                .Include(p => p.Occasions)
                 .ToListAsync();
         }
     }

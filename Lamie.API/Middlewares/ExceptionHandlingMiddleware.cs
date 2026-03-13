@@ -1,7 +1,6 @@
 using Lamie.Application.Common.Exceptions;
+using Lamie.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
-using System.Net;
-using System.Text.Json;
 
 namespace Lamie.API.Middlewares
 {
@@ -36,6 +35,7 @@ namespace Lamie.API.Middlewares
                     ConflictException => StatusCodes.Status409Conflict,
                     UnauthorizedException => StatusCodes.Status401Unauthorized,
                     ForbiddenException => StatusCodes.Status403Forbidden,
+                    BusinessRuleException => StatusCodes.Status400BadRequest,
                     _ => StatusCodes.Status400BadRequest
                 };
 
@@ -48,6 +48,23 @@ namespace Lamie.API.Middlewares
                 };
 
                 await context.Response.WriteAsJsonAsync(response);
+            }
+            catch (DomainException ex)
+            {
+                if (context.Response.HasStarted)
+                {
+                    throw;
+                }
+
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    success = false,
+                    code = "BUSINESS_RULE_VIOLATION",
+                    message = ex.Message
+                });
             }
             catch (Exception ex)
             {

@@ -6,6 +6,7 @@ using Lamie.Infrastructure.Options;
 using Lamie.Infrastructure.Persistence;
 using Lamie.Infrastructure.Persistence.Repositories;
 using Lamie.Infrastructure.Storage;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,6 +40,9 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(Lamie.Application.AssemblyReference).Assembly);
+
 // MediatR
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(AssemblyReference).Assembly)
@@ -58,6 +62,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Repository
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
+builder.Services.AddScoped<IColorRepository, ColorRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
+builder.Services.AddScoped<IOccasionRepository, OccasionRepository>();
+builder.Services.AddScoped<IStyleRepository, StyleRepository>();
 builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
 
 // Supabase Storage (cho API dùng trực tiếp qua IObjectStorageService)
