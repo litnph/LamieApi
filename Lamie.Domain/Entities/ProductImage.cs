@@ -29,6 +29,15 @@ namespace Lamie.Domain.Entities
         {
             IsActive = false;
         }
+
+        internal void Update(string imageUrl, int sortOrder)
+        {
+            if (string.IsNullOrWhiteSpace(imageUrl))
+                throw new DomainException("Image URL is required");
+
+            ImageUrl = imageUrl;
+            SortOrder = sortOrder;
+        }
     }
 
 }

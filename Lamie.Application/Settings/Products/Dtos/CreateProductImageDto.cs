@@ -1,10 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-
 namespace Lamie.Application.Settings.Products.Dtos
 {
     public class CreateProductImageDto
@@ -13,8 +6,8 @@ namespace Lamie.Application.Settings.Products.Dtos
         public string? ImageUrl { get; set; } = default!;
         public int? SortOrder { get; set; }
 
-        // Dữ liệu file ở dạng trung lập, không phụ thuộc IFormFile
-        public Stream? Content { get; set; }
+        // Dữ liệu file ở dạng trung lập (base64 -> byte[] khi bind JSON)
+        public byte[]? Content { get; set; }
         public string? FileName { get; set; }
         public string? ContentType { get; set; }
     }

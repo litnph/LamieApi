@@ -22,6 +22,7 @@ namespace Lamie.Domain.Entities
         public int Stock { get; private set; }
         public int CategoryId { get; private set; }
         public bool IsActive { get; private set; }
+        public string? ThumbnailUrl { get; private set; }
 
         public IReadOnlyCollection<ProductTranslation> Translations => _translations;
         public IReadOnlyCollection<ProductImage> Images => _images;
@@ -63,6 +64,24 @@ namespace Lamie.Domain.Entities
         public void AddImage(string imageUrl, int sortOrder)
         {
             _images.Add(new ProductImage(imageUrl, sortOrder));
+        }
+
+        public void UpdateImage(int imageId, string imageUrl, int sortOrder)
+        {
+            var image = _images.FirstOrDefault(x => x.Id == imageId);
+            if (image is null)
+                throw new DomainException($"Image with id {imageId} not found.");
+
+            image.Update(imageUrl, sortOrder);
+        }
+
+        public void DeactivateImage(int imageId)
+        {
+            var image = _images.FirstOrDefault(x => x.Id == imageId);
+            if (image is null)
+                return;
+
+            image.Deactivate();
         }
 
         public void AddCollection(int collectionId)
@@ -125,6 +144,11 @@ namespace Lamie.Domain.Entities
                 throw new DomainException("New price must be greater than sale price");
 
             Price = newPrice;
+        }
+
+        public void SetThumbnail(string? url)
+        {
+            ThumbnailUrl = url;
         }
     }
 

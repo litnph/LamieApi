@@ -31,6 +31,11 @@ namespace Lamie.Infrastructure.Persistence.Configurations
 
             builder.Property(p => p.IsActive);
 
+            builder.Property(p => p.ThumbnailUrl)
+                .HasColumnName("thumbnail_url")
+                .HasMaxLength(500)
+                .IsRequired(false);
+
             builder.Property(p => p.CreatedAt);
             builder.Property(p => p.UpdatedAt);
 

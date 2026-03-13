@@ -1,15 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MediatR;
 using Lamie.Application.Settings.Products.Dtos;
+using MediatR;
+using System.Collections.Generic;
 
 namespace Lamie.Application.Settings.Products.Commands
 {
-    public class CreateProductCommand : IRequest<int>
+    public class UpdateProductCommand : IRequest
     {
+        public int Id { get; set; }
+
         public string Sku { get; set; } = default!;
         public decimal Price { get; set; }
         public decimal? SalePrice { get; set; }
@@ -27,3 +25,4 @@ namespace Lamie.Application.Settings.Products.Commands
         public List<CreateProductImageDto> Images { get; set; } = new();
     }
 }
+

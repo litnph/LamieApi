@@ -1,4 +1,3 @@
-using Lamie.API.Models;
 using Lamie.Application.Settings.Products.Commands;
 using Lamie.Application.Settings.Products.Dtos;
 using Lamie.Application.Settings.Products.Queries;
@@ -22,39 +21,8 @@ namespace Lamie.API.Controllers
         /// Admin: Tạo sản phẩm mới
         /// </summary>
         [HttpPost]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> Create([FromForm] CreateProductMultipartRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromBody] CreateProductCommand command, CancellationToken cancellationToken)
         {
-            // Payload là JSON của CreateProductCommand
-            var command = System.Text.Json.JsonSerializer.Deserialize<CreateProductCommand>(
-                request.Payload,
-                new System.Text.Json.JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }) ?? throw new InvalidOperationException("Payload is invalid.");
-
-            // Map files -> CreateProductImageDto (Application DTO)
-            if (request.Files is not null && request.Files.Count > 0)
-            {
-                command.Images = new List<CreateProductImageDto>();
-
-                for (var index = 0; index < request.Files.Count; index++)
-                {
-                    var file = request.Files[index];
-                    if (file is null || file.Length <= 0) continue;
-
-                    var stream = file.OpenReadStream();
-
-                    command.Images.Add(new CreateProductImageDto
-                    {
-                        Content = stream,
-                        FileName = file.FileName,
-                        ContentType = file.ContentType,
-                        SortOrder = index
-                    });
-                }
-            }
-
             var productId = await _mediator.Send(command, cancellationToken);
 
             return CreatedAtAction(
@@ -82,6 +50,27 @@ namespace Lamie.API.Controllers
         {
             var result = await _mediator.Send(new GetAllProductsQuery());
             return Ok(result);
+        }
+
+        /// <summary>
+        /// Admin: Cập nhật sản phẩm
+        /// </summary>
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateProductCommand command, CancellationToken cancellationToken)
+        {
+            command.Id = id;
+            await _mediator.Send(command, cancellationToken);
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Admin: Xóa sản phẩm
+        /// </summary>
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+        {
+            await _mediator.Send(new DeleteProductCommand(id), cancellationToken);
+            return NoContent();
         }
 
         // Logic sanitize / build path đã được chuyển xuống Application layer (CreateProductHandler)

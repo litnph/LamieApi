@@ -41,7 +41,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // AutoMapper
-builder.Services.AddAutoMapper(typeof(Lamie.Application.AssemblyReference).Assembly);
+builder.Services.AddAutoMapper(
+    cfg => { },
+    typeof(Lamie.Application.AssemblyReference).Assembly);
 
 // MediatR
 builder.Services.AddMediatR(cfg =>

@@ -26,6 +26,7 @@ public sealed record ProductDetailsDto
     public int Stock { get; init; }
     public int CategoryId { get; init; }
     public bool IsActive { get; init; }
+    public string? ThumbnailUrl { get; init; }
 
     public IReadOnlyList<ProductTranslationDto> Translations { get; init; } = [];
     public IReadOnlyList<ProductImageDto> Images { get; init; } = [];

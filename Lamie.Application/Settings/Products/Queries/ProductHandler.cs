@@ -59,6 +59,7 @@ namespace Lamie.Application.Settings.Products.Queries
                 Stock = product.Stock,
                 CategoryId = product.CategoryId,
                 IsActive = product.IsActive,
+                ThumbnailUrl = product.ThumbnailUrl,
                 Translations = product.Translations.Select(t => new ProductTranslationDto
                 {
                     Id = t.Id,

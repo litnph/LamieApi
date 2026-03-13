@@ -1,16 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FluentValidation;
 
 namespace Lamie.Application.Settings.Products.Commands
 {
-    public class CreateProductValidator : AbstractValidator<CreateProductCommand>
+    public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
     {
-        public CreateProductValidator()
+        public UpdateProductValidator()
         {
+            RuleFor(x => x.Id)
+                .GreaterThan(0);
+
             RuleFor(x => x.Sku)
                 .NotEmpty()
                 .MaximumLength(50);
@@ -24,17 +22,6 @@ namespace Lamie.Application.Settings.Products.Commands
             RuleFor(x => x.CategoryId)
                 .GreaterThan(0);
 
-            RuleFor(x => x.Translations)
-                .NotEmpty();
-
-            RuleForEach(x => x.Translations)
-                .ChildRules(t =>
-                {
-                    t.RuleFor(x => x.LanguageCode).NotEmpty();
-                    t.RuleFor(x => x.Name).NotEmpty();
-                    t.RuleFor(x => x.Slug).NotEmpty();
-                });
-
             RuleForEach(x => x.Images)
                 .ChildRules(i =>
                 {
@@ -47,3 +34,4 @@ namespace Lamie.Application.Settings.Products.Commands
         }
     }
 }
+

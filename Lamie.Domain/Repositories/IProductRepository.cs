@@ -1,4 +1,4 @@
-﻿using Lamie.Domain.Entities;
+using Lamie.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,5 +12,7 @@ namespace Lamie.Domain.Repositories
         Task AddAsync(Product product);
         Task<Product?> GetByIdAsync(int id);
         Task<List<Product>?> GetAllAsync();
+        Task UpdateAsync(Product product);
+        Task DeleteAsync(Product product);
     }
 }

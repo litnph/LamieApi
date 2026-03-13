@@ -93,6 +93,20 @@ namespace Lamie.Application.Settings.Products.Commands
             // Add images sau khi upload (nếu có)
             await UploadImagesIfNeededAsync(product, command, cancellationToken);
 
+            // Nếu chưa set thumbnail mà có ảnh, dùng ảnh đầu tiên theo sort
+            if (!string.IsNullOrWhiteSpace(command.ThumbnailUrl))
+            {
+                product.SetThumbnail(command.ThumbnailUrl);
+            }
+            else
+            {
+                var firstImage = product.Images.OrderBy(x => x.SortOrder).FirstOrDefault();
+                if (firstImage is not null)
+                {
+                    product.SetThumbnail(firstImage.ImageUrl);
+                }
+            }
+
             // Lưu aggregate
             await _repository.AddAsync(product);
 
@@ -110,7 +124,7 @@ namespace Lamie.Application.Settings.Products.Commands
             {
                 var imageDto = command.Images[index];
 
-                if (imageDto.Content is null)
+                if (imageDto.Content is null || imageDto.Content.Length == 0)
                 {
                     // Không có file attach, nhưng có thể đã có sẵn ImageUrl
                     product.AddImage(
@@ -122,8 +136,10 @@ namespace Lamie.Application.Settings.Products.Commands
 
                 var objectPath = BuildProductObjectPath(command.Sku, imageDto.FileName, index);
 
+                await using var stream = new MemoryStream(imageDto.Content);
+
                 var url = await _fileStorage.UploadPublicAsync(
-                    imageDto.Content,
+                    stream,
                     objectPath,
                     imageDto.ContentType ?? "application/octet-stream",
                     cancellationToken);
