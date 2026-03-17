@@ -18,10 +18,11 @@ namespace Lamie.API.Controllers
         }
 
         /// <summary>
-        /// Admin: Tạo sản phẩm mới
+        /// Admin: Tạo sản phẩm mới (multipart/form-data: ThumbnailFile, Images[].ImageFile)
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateProductCommand command, CancellationToken cancellationToken)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Create([FromForm] CreateProductCommand command, CancellationToken cancellationToken)
         {
             var productId = await _mediator.Send(command, cancellationToken);
 
@@ -53,10 +54,11 @@ namespace Lamie.API.Controllers
         }
 
         /// <summary>
-        /// Admin: Cập nhật sản phẩm
+        /// Admin: Cập nhật sản phẩm (multipart/form-data khi có Images[].ImageFile)
         /// </summary>
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateProductCommand command, CancellationToken cancellationToken)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Update(int id, [FromForm] UpdateProductCommand command, CancellationToken cancellationToken)
         {
             command.Id = id;
             await _mediator.Send(command, cancellationToken);

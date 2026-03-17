@@ -90,15 +90,28 @@ namespace Lamie.Application.Settings.Products.Commands
                 }
             }
 
+            // Upload thumbnail nếu có file
+            if (command.ThumbnailFile is { Length: > 0 })
+            {
+                var thumbPath = BuildProductObjectPath(command.Sku, command.ThumbnailFile.FileName, -1);
+                await using var thumbStream = command.ThumbnailFile.OpenReadStream();
+                var thumbUrl = await _fileStorage.UploadPublicAsync(
+                    thumbStream,
+                    thumbPath,
+                    command.ThumbnailFile.ContentType ?? "application/octet-stream",
+                    cancellationToken);
+                product.SetThumbnail(thumbUrl);
+            }
+            else if (!string.IsNullOrWhiteSpace(command.ThumbnailUrl))
+            {
+                product.SetThumbnail(command.ThumbnailUrl);
+            }
+
             // Add images sau khi upload (nếu có)
             await UploadImagesIfNeededAsync(product, command, cancellationToken);
 
             // Nếu chưa set thumbnail mà có ảnh, dùng ảnh đầu tiên theo sort
-            if (!string.IsNullOrWhiteSpace(command.ThumbnailUrl))
-            {
-                product.SetThumbnail(command.ThumbnailUrl);
-            }
-            else
+            if (string.IsNullOrWhiteSpace(product.ThumbnailUrl))
             {
                 var firstImage = product.Images.OrderBy(x => x.SortOrder).FirstOrDefault();
                 if (firstImage is not null)
@@ -124,24 +137,27 @@ namespace Lamie.Application.Settings.Products.Commands
             {
                 var imageDto = command.Images[index];
 
-                if (imageDto.Content is null || imageDto.Content.Length == 0)
+                if (imageDto.ImageFile is null || imageDto.ImageFile.Length == 0)
                 {
-                    // Không có file attach, nhưng có thể đã có sẵn ImageUrl
-                    product.AddImage(
-                        imageDto.ImageUrl ?? string.Empty,
-                        imageDto.SortOrder ?? index
-                    );
+                    // Không có file attach, dùng ImageUrl nếu có
+                    if (!string.IsNullOrWhiteSpace(imageDto.ImageUrl))
+                    {
+                        product.AddImage(
+                            imageDto.ImageUrl,
+                            imageDto.SortOrder ?? index
+                        );
+                    }
                     continue;
                 }
 
-                var objectPath = BuildProductObjectPath(command.Sku, imageDto.FileName, index);
+                var objectPath = BuildProductObjectPath(command.Sku, imageDto.ImageFile.FileName, index);
 
-                await using var stream = new MemoryStream(imageDto.Content);
+                await using var stream = imageDto.ImageFile.OpenReadStream();
 
                 var url = await _fileStorage.UploadPublicAsync(
                     stream,
                     objectPath,
-                    imageDto.ContentType ?? "application/octet-stream",
+                    imageDto.ImageFile.ContentType ?? "application/octet-stream",
                     cancellationToken);
 
                 var sortOrder = imageDto.SortOrder ?? index;

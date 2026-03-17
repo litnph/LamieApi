@@ -111,16 +111,16 @@ namespace Lamie.Application.Settings.Products.Commands
                 // Ảnh cũ (có Id)
                 if (imageDto.Id.HasValue && existingIds.Contains(imageDto.Id.Value))
                 {
-                    // Nếu có content mới => upload Supabase, cập nhật url
-                    if (imageDto.Content is { Length: > 0 })
+                    // Nếu có file mới => upload, cập nhật url
+                    if (imageDto.ImageFile is { Length: > 0 })
                     {
-                        var objectPath = BuildProductObjectPath(product.Sku, imageDto.FileName, sortOrder);
-                        await using var stream = new MemoryStream(imageDto.Content);
+                        var objectPath = BuildProductObjectPath(product.Sku, imageDto.ImageFile.FileName, sortOrder);
+                        await using var stream = imageDto.ImageFile.OpenReadStream();
 
                         var url = await _fileStorage.UploadPublicAsync(
                             stream,
                             objectPath,
-                            imageDto.ContentType ?? "application/octet-stream",
+                            imageDto.ImageFile.ContentType ?? "application/octet-stream",
                             cancellationToken);
 
                         product.UpdateImage(imageDto.Id.Value, url, sortOrder);
@@ -135,15 +135,15 @@ namespace Lamie.Application.Settings.Products.Commands
                 }
 
                 // Ảnh mới
-                if (imageDto.Content is { Length: > 0 })
+                if (imageDto.ImageFile is { Length: > 0 })
                 {
-                    var objectPath = BuildProductObjectPath(product.Sku, imageDto.FileName, sortOrder);
-                    await using var stream = new MemoryStream(imageDto.Content);
+                    var objectPath = BuildProductObjectPath(product.Sku, imageDto.ImageFile.FileName, sortOrder);
+                    await using var stream = imageDto.ImageFile.OpenReadStream();
 
                     var url = await _fileStorage.UploadPublicAsync(
                         stream,
                         objectPath,
-                        imageDto.ContentType ?? "application/octet-stream",
+                        imageDto.ImageFile.ContentType ?? "application/octet-stream",
                         cancellationToken);
 
                     product.AddImage(url, sortOrder);

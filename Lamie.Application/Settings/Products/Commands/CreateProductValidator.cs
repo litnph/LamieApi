@@ -41,8 +41,8 @@ namespace Lamie.Application.Settings.Products.Commands
                     i.RuleFor(x => x)
                         .Must(img =>
                             !string.IsNullOrWhiteSpace(img.ImageUrl) ||
-                            (img.Content is { Length: > 0 }))
-                        .WithMessage("Either ImageUrl or file content is required.");
+                            (img.ImageFile is { Length: > 0 }))
+                        .WithMessage("Either ImageUrl or ImageFile is required for each image.");
                 });
         }
     }

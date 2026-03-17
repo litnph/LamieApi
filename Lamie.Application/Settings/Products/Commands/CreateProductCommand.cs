@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MediatR;
 using Lamie.Application.Settings.Products.Dtos;
+using Microsoft.AspNetCore.Http;
 
 namespace Lamie.Application.Settings.Products.Commands
 {
@@ -15,6 +16,7 @@ namespace Lamie.Application.Settings.Products.Commands
         public decimal? SalePrice { get; set; }
         public int Stock { get; set; }
         public int CategoryId { get; set; }
+        public IFormFile? ThumbnailFile { get; set; }
         public string? ThumbnailUrl { get; set; }
 
         public List<int> TagIds { get; set; } = new();
