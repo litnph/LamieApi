@@ -56,11 +56,10 @@ namespace Lamie.API.Controllers
         /// <summary>
         /// Admin: Cập nhật sản phẩm (multipart/form-data khi có Images[].ImageFile)
         /// </summary>
-        [HttpPut("{id:int}")]
+        [HttpPut]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> Update(int id, [FromForm] UpdateProductCommand command, CancellationToken cancellationToken)
+        public async Task<IActionResult> Update([FromForm] UpdateProductCommand command, CancellationToken cancellationToken)
         {
-            command.Id = id;
             await _mediator.Send(command, cancellationToken);
             return NoContent();
         }
