@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -115,19 +116,26 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Render / reverse proxy: honor X-Forwarded-* so Request.Scheme is https and HTTPS redirection works.
+// Reverse proxy (Render, nginx, …): honor X-Forwarded-* for correct Scheme / remote IP.
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor
+        | ForwardedHeaders.XForwardedProto
+        | ForwardedHeaders.XForwardedHost;
+    options.ForwardLimit = null;
+    options.RequireHeaderSymmetry = false;
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
 
-// Stateless JWT API: avoid persisting DP keys under /root/.aspnet in ephemeral containers.
+// Stateless JWT API: default IDataProtectionProvider uses /root/.aspnet (file + warnings).
+// Register ephemeral last so it wins over any prior TryAddSingleton<IDataProtectionProvider>.
 if (!builder.Environment.IsDevelopment())
 {
-    builder.Services.AddDataProtection()
-        .UseEphemeralDataProtectionProvider();
+    builder.Services.RemoveAll<IDataProtectionProvider>();
+    builder.Services.AddSingleton<IDataProtectionProvider>(sp =>
+        new EphemeralDataProtectionProvider(sp.GetRequiredService<ILoggerFactory>()));
 }
 
 var app = builder.Build();
@@ -142,7 +150,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-app.UseHttpsRedirection();
+// Render terminates TLS; container chỉ nhận HTTP. Redirect HTTPS ở đây thường gây
+// "Failed to determine the https port" và không cần thiết (edge đã bắt buộc HTTPS).
+var onRender = string.Equals(Environment.GetEnvironmentVariable("RENDER"), "true", StringComparison.OrdinalIgnoreCase);
+if (!onRender)
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors("AllowAll");
 
