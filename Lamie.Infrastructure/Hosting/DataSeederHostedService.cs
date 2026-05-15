@@ -39,12 +39,56 @@ public sealed class DataSeederHostedService : IHostedService
         var sp = scope.ServiceProvider;
         var db = sp.GetRequiredService<AppDbContext>();
 
+        await AlignEfMigrationsHistoryToSnakeCaseAsync(db, cancellationToken);
+        await db.Database.MigrateAsync(cancellationToken);
+
         await SeedLanguagesAsync(db, cancellationToken);
         await SeedChannelsAsync(db, cancellationToken);
         await SeedAdminAsync(sp, cancellationToken);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    // Legacy DBs may have PascalCase columns on __EFMigrationsHistory; NamingConventions expects snake_case, which blocks Migrate.
+    private static async Task AlignEfMigrationsHistoryToSnakeCaseAsync(
+        AppDbContext db,
+        CancellationToken cancellationToken)
+    {
+        const string sql = """
+            DO $efnorm$
+            BEGIN
+              IF EXISTS (
+                SELECT 1
+                FROM pg_catalog.pg_attribute a
+                INNER JOIN pg_catalog.pg_class c ON c.oid = a.attrelid
+                INNER JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'public'
+                  AND c.relname = '__EFMigrationsHistory'
+                  AND a.attnum > 0
+                  AND NOT a.attisdropped
+                  AND a.attname = 'MigrationId'
+              ) THEN
+                ALTER TABLE public."__EFMigrationsHistory" RENAME COLUMN "MigrationId" TO migration_id;
+              END IF;
+
+              IF EXISTS (
+                SELECT 1
+                FROM pg_catalog.pg_attribute a
+                INNER JOIN pg_catalog.pg_class c ON c.oid = a.attrelid
+                INNER JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'public'
+                  AND c.relname = '__EFMigrationsHistory'
+                  AND a.attnum > 0
+                  AND NOT a.attisdropped
+                  AND a.attname = 'ProductVersion'
+              ) THEN
+                ALTER TABLE public."__EFMigrationsHistory" RENAME COLUMN "ProductVersion" TO product_version;
+              END IF;
+            END $efnorm$;
+            """;
+
+        await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
+    }
 
     private async Task SeedLanguagesAsync(AppDbContext db, CancellationToken cancellationToken)
     {
