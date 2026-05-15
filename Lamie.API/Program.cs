@@ -4,6 +4,8 @@ using Lamie.Application;
 using Lamie.Infrastructure;
 using Lamie.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -104,7 +106,24 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Render / reverse proxy: honor X-Forwarded-* so Request.Scheme is https and HTTPS redirection works.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// Stateless JWT API: avoid persisting DP keys under /root/.aspnet in ephemeral containers.
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddDataProtection()
+        .UseEphemeralDataProtectionProvider();
+}
+
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 if (app.Environment.IsDevelopment())
 {
