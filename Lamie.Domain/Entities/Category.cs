@@ -1,19 +1,15 @@
-using System.Collections.Generic;
-using System.Linq;
-
 namespace Lamie.Domain.Entities;
 
 public class Category : Entity
 {
     private readonly List<CategoryTranslation> _translations = new();
 
-    public int Id { get; private set; }
     public int SortOrder { get; private set; }
     public bool IsActive { get; private set; } = true;
 
     public IReadOnlyCollection<CategoryTranslation> Translations => _translations;
 
-    private Category() { } // EF
+    private Category() { }
 
     public Category(int sortOrder, bool isActive = true)
     {
@@ -27,15 +23,8 @@ public class Category : Entity
         IsActive = isActive;
     }
 
-    public void SetSortOrder(int sortOrder)
-    {
-        SortOrder = sortOrder;
-    }
-
-    public void SetActive(bool isActive)
-    {
-        IsActive = isActive;
-    }
+    public void SetSortOrder(int sortOrder) => SortOrder = sortOrder;
+    public void SetActive(bool isActive) => IsActive = isActive;
 
     public void AddOrUpdateTranslation(string languageCode, string name, string? description)
     {
@@ -50,4 +39,3 @@ public class Category : Entity
         }
     }
 }
-

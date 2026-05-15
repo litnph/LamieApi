@@ -1,10 +1,12 @@
 using Lamie.Application.Settings.Attributes.Occasions;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lamie.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/settings/attributes/occasions")]
 public sealed class OccasionsController : ControllerBase
 {
@@ -22,14 +24,15 @@ public sealed class OccasionsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetOccasionById(int id, CancellationToken cancellationToken)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetOccasionById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetOccasionByIdQuery(id), cancellationToken);
         return Ok(result);
     }
 
     [HttpPost]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<IActionResult> CreateOccasion([FromBody] CreateOccasionCommand command, CancellationToken cancellationToken)
     {
         var id = await _mediator.Send(command, cancellationToken);
@@ -37,17 +40,18 @@ public sealed class OccasionsController : ControllerBase
     }
 
     [HttpPut]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<IActionResult> UpdateOccasion([FromBody] UpdateOccasionCommand command, CancellationToken cancellationToken)
     {
         await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> DeleteOccasion(int id, CancellationToken cancellationToken)
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> DeleteOccasion(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeleteOccasionCommand(id), cancellationToken);
         return NoContent();
     }
 }
-

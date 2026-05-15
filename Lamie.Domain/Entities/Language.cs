@@ -1,6 +1,11 @@
 namespace Lamie.Domain.Entities;
 
-public class Language : Entity
+/// <summary>
+/// Lookup table for supported language codes (ISO 639-1 / BCP 47).
+/// Uses Code as natural PK so we don't introduce a surrogate Guid.
+/// Not soft-deletable; always small in size.
+/// </summary>
+public class Language
 {
     public string Code { get; private set; } = default!;
     public string Name { get; private set; } = default!;
@@ -15,9 +20,6 @@ public class Language : Entity
         IsActive = isActive;
     }
 
-    public void SetActive(bool isActive)
-    {
-        IsActive = isActive;
-    }
+    public void Rename(string name) => Name = name;
+    public void SetActive(bool isActive) => IsActive = isActive;
 }
-

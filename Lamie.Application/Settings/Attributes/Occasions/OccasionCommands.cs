@@ -5,15 +5,13 @@ using MediatR;
 
 namespace Lamie.Application.Settings.Attributes.Occasions;
 
-// Commands
-public sealed record CreateOccasionCommand(bool IsActive, List<OccasionTranslationInput> Translations) : IRequest<int>;
+public sealed record CreateOccasionCommand(bool IsActive, List<OccasionTranslationInput> Translations) : IRequest<Guid>;
 
-public sealed record UpdateOccasionCommand(int Id, bool IsActive, List<OccasionTranslationInput> Translations) : IRequest;
+public sealed record UpdateOccasionCommand(Guid Id, bool IsActive, List<OccasionTranslationInput> Translations) : IRequest;
 
-public sealed record DeleteOccasionCommand(int Id) : IRequest;
+public sealed record DeleteOccasionCommand(Guid Id) : IRequest;
 
-// Command Handlers
-public sealed class CreateOccasionHandler : IRequestHandler<CreateOccasionCommand, int>
+public sealed class CreateOccasionHandler : IRequestHandler<CreateOccasionCommand, Guid>
 {
     private readonly IOccasionRepository _repository;
     private readonly ILanguageRepository _languageRepository;
@@ -24,9 +22,10 @@ public sealed class CreateOccasionHandler : IRequestHandler<CreateOccasionComman
         _languageRepository = languageRepository;
     }
 
-    public async Task<int> Handle(CreateOccasionCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateOccasionCommand request, CancellationToken cancellationToken)
     {
-        await OccasionValidation.ValidateTranslationsAsync(request.Translations, _languageRepository, cancellationToken);
+        await TranslationValidation.EnsureValidAsync(
+            request.Translations, t => t.LanguageCode, t => t.Name, _languageRepository, cancellationToken);
 
         var occasion = new Occasion(request.IsActive);
 
@@ -35,7 +34,7 @@ public sealed class CreateOccasionHandler : IRequestHandler<CreateOccasionComman
             occasion.AddOrUpdateTranslation(t.LanguageCode, t.Name, t.Description);
         }
 
-        await _repository.AddAsync(occasion);
+        await _repository.AddAsync(occasion, cancellationToken);
         return occasion.Id;
     }
 }
@@ -53,13 +52,11 @@ public sealed class UpdateOccasionHandler : IRequestHandler<UpdateOccasionComman
 
     public async Task Handle(UpdateOccasionCommand request, CancellationToken cancellationToken)
     {
-        await OccasionValidation.ValidateTranslationsAsync(request.Translations, _languageRepository, cancellationToken);
+        await TranslationValidation.EnsureValidAsync(
+            request.Translations, t => t.LanguageCode, t => t.Name, _languageRepository, cancellationToken);
 
-        var occasion = await _repository.GetByIdAsync(request.Id);
-        if (occasion is null)
-        {
-            throw new NotFoundException("Occasion", request.Id);
-        }
+        var occasion = await _repository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Occasion", request.Id);
 
         occasion.SetActive(request.IsActive);
 
@@ -68,7 +65,7 @@ public sealed class UpdateOccasionHandler : IRequestHandler<UpdateOccasionComman
             occasion.AddOrUpdateTranslation(t.LanguageCode, t.Name, t.Description);
         }
 
-        await _repository.UpdateAsync(occasion);
+        await _repository.UpdateAsync(occasion, cancellationToken);
     }
 }
 
@@ -83,60 +80,9 @@ public sealed class DeleteOccasionHandler : IRequestHandler<DeleteOccasionComman
 
     public async Task Handle(DeleteOccasionCommand request, CancellationToken cancellationToken)
     {
-        var occasion = await _repository.GetByIdAsync(request.Id);
-        if (occasion is null)
-        {
-            throw new NotFoundException("Occasion", request.Id);
-        }
+        var occasion = await _repository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Occasion", request.Id);
 
-        await _repository.DeleteAsync(occasion);
+        await _repository.DeleteAsync(occasion, cancellationToken);
     }
 }
-
-internal static class OccasionValidation
-{
-    public static async Task ValidateTranslationsAsync(
-        IReadOnlyList<OccasionTranslationInput> translations,
-        ILanguageRepository languageRepository,
-        CancellationToken cancellationToken)
-    {
-        var errors = new Dictionary<string, string[]>();
-
-        if (translations is null || translations.Count == 0)
-        {
-            errors["translations"] = ["At least one translation is required"];
-            throw new ValidationException(errors);
-        }
-
-        for (var i = 0; i < translations.Count; i++)
-        {
-            if (string.IsNullOrWhiteSpace(translations[i].LanguageCode))
-            {
-                errors[$"translations[{i}].languageCode"] = ["LanguageCode is required"];
-            }
-
-            if (string.IsNullOrWhiteSpace(translations[i].Name))
-            {
-                errors[$"translations[{i}].name"] = ["Name is required"];
-            }
-
-            if (!string.IsNullOrWhiteSpace(translations[i].LanguageCode))
-            {
-                var exists = await languageRepository.ExistsAsync(
-                    translations[i].LanguageCode,
-                    cancellationToken);
-
-                if (!exists)
-                {
-                    errors[$"translations[{i}].languageCode"] = ["LanguageCode is not supported"];
-                }
-            }
-        }
-
-        if (errors.Count > 0)
-        {
-            throw new ValidationException(errors);
-        }
-    }
-}
-

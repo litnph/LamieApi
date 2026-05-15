@@ -2,13 +2,12 @@ namespace Lamie.Domain.Entities;
 
 public class TagTranslation : Entity
 {
-    public int Id { get; private set; }
-    public int TagId { get; private set; }
+    public Guid TagId { get; private set; }
     public string LanguageCode { get; private set; } = default!;
     public string Name { get; private set; } = default!;
     public string? Description { get; private set; }
 
-    private TagTranslation() { } // EF
+    private TagTranslation() { }
 
     internal TagTranslation(string languageCode, string name, string? description)
     {
@@ -23,5 +22,3 @@ public class TagTranslation : Entity
         Description = description;
     }
 }
-
-

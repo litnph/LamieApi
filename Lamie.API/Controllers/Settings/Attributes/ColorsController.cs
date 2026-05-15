@@ -1,10 +1,12 @@
 using Lamie.Application.Settings.Attributes.Colors;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lamie.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/settings/attributes/colors")]
 public sealed class ColorsController : ControllerBase
 {
@@ -22,14 +24,15 @@ public sealed class ColorsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetColorById(int id, CancellationToken cancellationToken)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetColorById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetColorByIdQuery(id), cancellationToken);
         return Ok(result);
     }
 
     [HttpPost]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<IActionResult> CreateColor([FromBody] CreateColorCommand command, CancellationToken cancellationToken)
     {
         var id = await _mediator.Send(command, cancellationToken);
@@ -37,17 +40,18 @@ public sealed class ColorsController : ControllerBase
     }
 
     [HttpPut]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<IActionResult> UpdateColor([FromBody] UpdateColorCommand command, CancellationToken cancellationToken)
     {
         await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> DeleteColor(int id, CancellationToken cancellationToken)
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> DeleteColor(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeleteColorCommand(id), cancellationToken);
         return NoContent();
     }
 }
-

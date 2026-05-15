@@ -2,13 +2,12 @@ namespace Lamie.Domain.Entities;
 
 public class OccasionTranslation : Entity
 {
-    public int Id { get; private set; }
-    public int OccasionId { get; private set; }
+    public Guid OccasionId { get; private set; }
     public string LanguageCode { get; private set; } = default!;
     public string Name { get; private set; } = default!;
     public string? Description { get; private set; }
 
-    private OccasionTranslation() { } // EF
+    private OccasionTranslation() { }
 
     internal OccasionTranslation(string languageCode, string name, string? description)
     {
@@ -23,4 +22,3 @@ public class OccasionTranslation : Entity
         Description = description;
     }
 }
-

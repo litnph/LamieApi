@@ -4,10 +4,9 @@ namespace Lamie.Domain.Repositories;
 
 public interface IStyleRepository
 {
-    Task<Style?> GetByIdAsync(int id);
-    Task<List<Style>> GetAllAsync();
-    Task AddAsync(Style style);
-    Task UpdateAsync(Style style);
-    Task DeleteAsync(Style style);
+    Task<Style?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<List<Style>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task AddAsync(Style style, CancellationToken cancellationToken = default);
+    Task UpdateAsync(Style style, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Style style, CancellationToken cancellationToken = default);
 }
-

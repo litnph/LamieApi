@@ -2,15 +2,13 @@ namespace Lamie.Domain.Entities;
 
 public class ProductOccasion : Entity
 {
-    public int Id { get; private set; }
-    public int ProductId { get; private set; }
-    public int OccasionId { get; private set; }
+    public Guid ProductId { get; private set; }
+    public Guid OccasionId { get; private set; }
 
-    private ProductOccasion() { } // EF
+    private ProductOccasion() { }
 
-    internal ProductOccasion(int occasionId)
+    internal ProductOccasion(Guid occasionId)
     {
         OccasionId = occasionId;
     }
 }
-

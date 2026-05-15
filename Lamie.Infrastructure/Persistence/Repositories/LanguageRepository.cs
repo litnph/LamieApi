@@ -15,33 +15,26 @@ public class LanguageRepository : ILanguageRepository
 
     public async Task<bool> ExistsAsync(string code, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            return false;
-        }
+        if (string.IsNullOrWhiteSpace(code)) return false;
 
         return await _context.Languages
             .AsNoTracking()
             .AnyAsync(l => l.Code == code && l.IsActive, cancellationToken);
     }
 
-    public async Task<List<Language>> GetAllAsync(CancellationToken cancellationToken = default)
+    public Task<List<Language>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Languages
+        return _context.Languages
             .AsNoTracking()
             .OrderBy(l => l.Code)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Language?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
+    public Task<Language?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(code)) return Task.FromResult<Language?>(null);
 
-        return await _context.Languages
-            .FirstOrDefaultAsync(l => l.Code == code, cancellationToken);
+        return _context.Languages.FirstOrDefaultAsync(l => l.Code == code, cancellationToken);
     }
 
     public async Task AddAsync(Language language, CancellationToken cancellationToken = default)
@@ -62,4 +55,3 @@ public class LanguageRepository : ILanguageRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 }
-

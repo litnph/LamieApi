@@ -2,15 +2,13 @@ namespace Lamie.Domain.Entities;
 
 public class ProductCollection : Entity
 {
-    public int Id { get; private set; }
-    public int ProductId { get; private set; }
-    public int CollectionId { get; private set; }
+    public Guid ProductId { get; private set; }
+    public Guid CollectionId { get; private set; }
 
-    private ProductCollection() { } // EF
+    private ProductCollection() { }
 
-    internal ProductCollection(int collectionId)
+    internal ProductCollection(Guid collectionId)
     {
         CollectionId = collectionId;
     }
 }
-

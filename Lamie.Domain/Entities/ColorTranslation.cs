@@ -2,13 +2,12 @@ namespace Lamie.Domain.Entities;
 
 public class ColorTranslation : Entity
 {
-    public int Id { get; private set; }
-    public int ColorId { get; private set; }
+    public Guid ColorId { get; private set; }
     public string LanguageCode { get; private set; } = default!;
     public string Name { get; private set; } = default!;
     public string? Description { get; private set; }
 
-    private ColorTranslation() { } // EF
+    private ColorTranslation() { }
 
     internal ColorTranslation(string languageCode, string name, string? description)
     {
@@ -23,4 +22,3 @@ public class ColorTranslation : Entity
         Description = description;
     }
 }
-

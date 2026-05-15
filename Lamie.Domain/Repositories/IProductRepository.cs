@@ -1,18 +1,12 @@
 using Lamie.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Lamie.Domain.Repositories
+namespace Lamie.Domain.Repositories;
+
+public interface IProductRepository
 {
-    public interface IProductRepository
-    {
-        Task AddAsync(Product product);
-        Task<Product?> GetByIdAsync(int id);
-        Task<List<Product>?> GetAllAsync();
-        Task UpdateAsync(Product product);
-        Task DeleteAsync(Product product);
-    }
+    Task AddAsync(Product product, CancellationToken cancellationToken = default);
+    Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<List<Product>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task UpdateAsync(Product product, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Product product, CancellationToken cancellationToken = default);
 }

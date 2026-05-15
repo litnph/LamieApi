@@ -5,15 +5,13 @@ using MediatR;
 
 namespace Lamie.Application.Settings.Attributes.Styles;
 
-// Commands
-public sealed record CreateStyleCommand(bool IsActive, List<StyleTranslationInput> Translations) : IRequest<int>;
+public sealed record CreateStyleCommand(bool IsActive, List<StyleTranslationInput> Translations) : IRequest<Guid>;
 
-public sealed record UpdateStyleCommand(int Id, bool IsActive, List<StyleTranslationInput> Translations) : IRequest;
+public sealed record UpdateStyleCommand(Guid Id, bool IsActive, List<StyleTranslationInput> Translations) : IRequest;
 
-public sealed record DeleteStyleCommand(int Id) : IRequest;
+public sealed record DeleteStyleCommand(Guid Id) : IRequest;
 
-// Command Handlers
-public sealed class CreateStyleHandler : IRequestHandler<CreateStyleCommand, int>
+public sealed class CreateStyleHandler : IRequestHandler<CreateStyleCommand, Guid>
 {
     private readonly IStyleRepository _repository;
     private readonly ILanguageRepository _languageRepository;
@@ -24,9 +22,10 @@ public sealed class CreateStyleHandler : IRequestHandler<CreateStyleCommand, int
         _languageRepository = languageRepository;
     }
 
-    public async Task<int> Handle(CreateStyleCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateStyleCommand request, CancellationToken cancellationToken)
     {
-        await StyleValidation.ValidateTranslationsAsync(request.Translations, _languageRepository, cancellationToken);
+        await TranslationValidation.EnsureValidAsync(
+            request.Translations, t => t.LanguageCode, t => t.Name, _languageRepository, cancellationToken);
 
         var style = new Style(request.IsActive);
 
@@ -35,7 +34,7 @@ public sealed class CreateStyleHandler : IRequestHandler<CreateStyleCommand, int
             style.AddOrUpdateTranslation(t.LanguageCode, t.Name, t.Description);
         }
 
-        await _repository.AddAsync(style);
+        await _repository.AddAsync(style, cancellationToken);
         return style.Id;
     }
 }
@@ -53,13 +52,11 @@ public sealed class UpdateStyleHandler : IRequestHandler<UpdateStyleCommand>
 
     public async Task Handle(UpdateStyleCommand request, CancellationToken cancellationToken)
     {
-        await StyleValidation.ValidateTranslationsAsync(request.Translations, _languageRepository, cancellationToken);
+        await TranslationValidation.EnsureValidAsync(
+            request.Translations, t => t.LanguageCode, t => t.Name, _languageRepository, cancellationToken);
 
-        var style = await _repository.GetByIdAsync(request.Id);
-        if (style is null)
-        {
-            throw new NotFoundException("Style", request.Id);
-        }
+        var style = await _repository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Style", request.Id);
 
         style.SetActive(request.IsActive);
 
@@ -68,7 +65,7 @@ public sealed class UpdateStyleHandler : IRequestHandler<UpdateStyleCommand>
             style.AddOrUpdateTranslation(t.LanguageCode, t.Name, t.Description);
         }
 
-        await _repository.UpdateAsync(style);
+        await _repository.UpdateAsync(style, cancellationToken);
     }
 }
 
@@ -83,60 +80,9 @@ public sealed class DeleteStyleHandler : IRequestHandler<DeleteStyleCommand>
 
     public async Task Handle(DeleteStyleCommand request, CancellationToken cancellationToken)
     {
-        var style = await _repository.GetByIdAsync(request.Id);
-        if (style is null)
-        {
-            throw new NotFoundException("Style", request.Id);
-        }
+        var style = await _repository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Style", request.Id);
 
-        await _repository.DeleteAsync(style);
+        await _repository.DeleteAsync(style, cancellationToken);
     }
 }
-
-internal static class StyleValidation
-{
-    public static async Task ValidateTranslationsAsync(
-        IReadOnlyList<StyleTranslationInput> translations,
-        ILanguageRepository languageRepository,
-        CancellationToken cancellationToken)
-    {
-        var errors = new Dictionary<string, string[]>();
-
-        if (translations is null || translations.Count == 0)
-        {
-            errors["translations"] = ["At least one translation is required"];
-            throw new ValidationException(errors);
-        }
-
-        for (var i = 0; i < translations.Count; i++)
-        {
-            if (string.IsNullOrWhiteSpace(translations[i].LanguageCode))
-            {
-                errors[$"translations[{i}].languageCode"] = ["LanguageCode is required"];
-            }
-
-            if (string.IsNullOrWhiteSpace(translations[i].Name))
-            {
-                errors[$"translations[{i}].name"] = ["Name is required"];
-            }
-
-            if (!string.IsNullOrWhiteSpace(translations[i].LanguageCode))
-            {
-                var exists = await languageRepository.ExistsAsync(
-                    translations[i].LanguageCode,
-                    cancellationToken);
-
-                if (!exists)
-                {
-                    errors[$"translations[{i}].languageCode"] = ["LanguageCode is not supported"];
-                }
-            }
-        }
-
-        if (errors.Count > 0)
-        {
-            throw new ValidationException(errors);
-        }
-    }
-}
-

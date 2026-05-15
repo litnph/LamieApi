@@ -3,17 +3,15 @@ using Lamie.Domain.Entities;
 using Lamie.Domain.Repositories;
 using MediatR;
 
-namespace Lamie.Application.MasterData.Tags;
+namespace Lamie.Application.Settings.Attributes.Tags;
 
-// Commands
-public sealed record CreateTagCommand(bool IsActive, List<TagTranslationInput> Translations) : IRequest<int>;
+public sealed record CreateTagCommand(bool IsActive, List<TagTranslationInput> Translations) : IRequest<Guid>;
 
-public sealed record UpdateTagCommand(int Id, bool IsActive, List<TagTranslationInput> Translations) : IRequest;
+public sealed record UpdateTagCommand(Guid Id, bool IsActive, List<TagTranslationInput> Translations) : IRequest;
 
-public sealed record DeleteTagCommand(int Id) : IRequest;
+public sealed record DeleteTagCommand(Guid Id) : IRequest;
 
-// Command Handlers
-public sealed class CreateTagHandler : IRequestHandler<CreateTagCommand, int>
+public sealed class CreateTagHandler : IRequestHandler<CreateTagCommand, Guid>
 {
     private readonly ITagRepository _repository;
     private readonly ILanguageRepository _languageRepository;
@@ -24,9 +22,10 @@ public sealed class CreateTagHandler : IRequestHandler<CreateTagCommand, int>
         _languageRepository = languageRepository;
     }
 
-    public async Task<int> Handle(CreateTagCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateTagCommand request, CancellationToken cancellationToken)
     {
-        await TagValidation.ValidateTranslationsAsync(request.Translations, _languageRepository, cancellationToken);
+        await TranslationValidation.EnsureValidAsync(
+            request.Translations, t => t.LanguageCode, t => t.Name, _languageRepository, cancellationToken);
 
         var tag = new Tag(request.IsActive);
 
@@ -35,7 +34,7 @@ public sealed class CreateTagHandler : IRequestHandler<CreateTagCommand, int>
             tag.AddOrUpdateTranslation(t.LanguageCode, t.Name, t.Description);
         }
 
-        await _repository.AddAsync(tag);
+        await _repository.AddAsync(tag, cancellationToken);
         return tag.Id;
     }
 }
@@ -53,13 +52,11 @@ public sealed class UpdateTagHandler : IRequestHandler<UpdateTagCommand>
 
     public async Task Handle(UpdateTagCommand request, CancellationToken cancellationToken)
     {
-        await TagValidation.ValidateTranslationsAsync(request.Translations, _languageRepository, cancellationToken);
+        await TranslationValidation.EnsureValidAsync(
+            request.Translations, t => t.LanguageCode, t => t.Name, _languageRepository, cancellationToken);
 
-        var tag = await _repository.GetByIdAsync(request.Id);
-        if (tag is null)
-        {
-            throw new NotFoundException("Tag", request.Id);
-        }
+        var tag = await _repository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Tag", request.Id);
 
         tag.SetActive(request.IsActive);
 
@@ -68,7 +65,7 @@ public sealed class UpdateTagHandler : IRequestHandler<UpdateTagCommand>
             tag.AddOrUpdateTranslation(t.LanguageCode, t.Name, t.Description);
         }
 
-        await _repository.UpdateAsync(tag);
+        await _repository.UpdateAsync(tag, cancellationToken);
     }
 }
 
@@ -83,60 +80,9 @@ public sealed class DeleteTagHandler : IRequestHandler<DeleteTagCommand>
 
     public async Task Handle(DeleteTagCommand request, CancellationToken cancellationToken)
     {
-        var tag = await _repository.GetByIdAsync(request.Id);
-        if (tag is null)
-        {
-            throw new NotFoundException("Tag", request.Id);
-        }
+        var tag = await _repository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Tag", request.Id);
 
-        await _repository.DeleteAsync(tag);
+        await _repository.DeleteAsync(tag, cancellationToken);
     }
 }
-
-internal static class TagValidation
-{
-    public static async Task ValidateTranslationsAsync(
-        IReadOnlyList<TagTranslationInput> translations,
-        ILanguageRepository languageRepository,
-        CancellationToken cancellationToken)
-    {
-        var errors = new Dictionary<string, string[]>();
-
-        if (translations is null || translations.Count == 0)
-        {
-            errors["translations"] = ["At least one translation is required"];
-            throw new ValidationException(errors);
-        }
-
-        for (var i = 0; i < translations.Count; i++)
-        {
-            if (string.IsNullOrWhiteSpace(translations[i].LanguageCode))
-            {
-                errors[$"translations[{i}].languageCode"] = ["LanguageCode is required"];
-            }
-
-            if (string.IsNullOrWhiteSpace(translations[i].Name))
-            {
-                errors[$"translations[{i}].name"] = ["Name is required"];
-            }
-
-            if (!string.IsNullOrWhiteSpace(translations[i].LanguageCode))
-            {
-                var exists = await languageRepository.ExistsAsync(
-                    translations[i].LanguageCode,
-                    cancellationToken);
-
-                if (!exists)
-                {
-                    errors[$"translations[{i}].languageCode"] = ["LanguageCode is not supported"];
-                }
-            }
-        }
-
-        if (errors.Count > 0)
-        {
-            throw new ValidationException(errors);
-        }
-    }
-}
-

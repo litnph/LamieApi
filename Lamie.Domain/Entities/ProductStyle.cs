@@ -2,15 +2,13 @@ namespace Lamie.Domain.Entities;
 
 public class ProductStyle : Entity
 {
-    public int Id { get; private set; }
-    public int ProductId { get; private set; }
-    public int StyleId { get; private set; }
+    public Guid ProductId { get; private set; }
+    public Guid StyleId { get; private set; }
 
-    private ProductStyle() { } // EF
+    private ProductStyle() { }
 
-    internal ProductStyle(int styleId)
+    internal ProductStyle(Guid styleId)
     {
         StyleId = styleId;
     }
 }
-

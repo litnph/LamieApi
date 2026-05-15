@@ -13,36 +13,35 @@ public class TagRepository : ITagRepository
         _context = context;
     }
 
-    public async Task<Tag?> GetByIdAsync(int id)
+    public Task<Tag?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Tags
+        return _context.Tags
             .Include(t => t.Translations)
-            .FirstOrDefaultAsync(t => t.Id == id);
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
     }
 
-    public async Task<List<Tag>> GetAllAsync()
+    public Task<List<Tag>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Tags
+        return _context.Tags
             .Include(t => t.Translations)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(Tag tag)
+    public async Task AddAsync(Tag tag, CancellationToken cancellationToken = default)
     {
-        await _context.Tags.AddAsync(tag);
-        await _context.SaveChangesAsync();
+        await _context.Tags.AddAsync(tag, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Tag tag)
+    public async Task UpdateAsync(Tag tag, CancellationToken cancellationToken = default)
     {
         _context.Tags.Update(tag);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Tag tag)
+    public async Task DeleteAsync(Tag tag, CancellationToken cancellationToken = default)
     {
         _context.Tags.Remove(tag);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }
-

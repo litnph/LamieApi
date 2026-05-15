@@ -2,13 +2,12 @@ namespace Lamie.Domain.Entities;
 
 public class CategoryTranslation : Entity
 {
-    public int Id { get; private set; }
-    public int CategoryId { get; private set; }
+    public Guid CategoryId { get; private set; }
     public string LanguageCode { get; private set; } = default!;
     public string Name { get; private set; } = default!;
     public string? Description { get; private set; }
 
-    private CategoryTranslation() { } // EF
+    private CategoryTranslation() { }
 
     internal CategoryTranslation(string languageCode, string name, string? description)
     {
@@ -23,4 +22,3 @@ public class CategoryTranslation : Entity
         Description = description;
     }
 }
-

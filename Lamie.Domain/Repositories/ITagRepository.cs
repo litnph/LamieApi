@@ -4,10 +4,9 @@ namespace Lamie.Domain.Repositories;
 
 public interface ITagRepository
 {
-    Task<Tag?> GetByIdAsync(int id);
-    Task<List<Tag>> GetAllAsync();
-    Task AddAsync(Tag tag);
-    Task UpdateAsync(Tag tag);
-    Task DeleteAsync(Tag tag);
+    Task<Tag?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<List<Tag>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task AddAsync(Tag tag, CancellationToken cancellationToken = default);
+    Task UpdateAsync(Tag tag, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Tag tag, CancellationToken cancellationToken = default);
 }
-

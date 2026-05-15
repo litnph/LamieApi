@@ -13,36 +13,35 @@ public class ColorRepository : IColorRepository
         _context = context;
     }
 
-    public async Task<Color?> GetByIdAsync(int id)
+    public Task<Color?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Colors
+        return _context.Colors
             .Include(c => c.Translations)
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
-    public async Task<List<Color>> GetAllAsync()
+    public Task<List<Color>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Colors
+        return _context.Colors
             .Include(c => c.Translations)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(Color color)
+    public async Task AddAsync(Color color, CancellationToken cancellationToken = default)
     {
-        await _context.Colors.AddAsync(color);
-        await _context.SaveChangesAsync();
+        await _context.Colors.AddAsync(color, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Color color)
+    public async Task UpdateAsync(Color color, CancellationToken cancellationToken = default)
     {
         _context.Colors.Update(color);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Color color)
+    public async Task DeleteAsync(Color color, CancellationToken cancellationToken = default)
     {
         _context.Colors.Remove(color);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }
-

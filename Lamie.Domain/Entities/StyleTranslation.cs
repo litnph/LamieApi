@@ -2,13 +2,12 @@ namespace Lamie.Domain.Entities;
 
 public class StyleTranslation : Entity
 {
-    public int Id { get; private set; }
-    public int StyleId { get; private set; }
+    public Guid StyleId { get; private set; }
     public string LanguageCode { get; private set; } = default!;
     public string Name { get; private set; } = default!;
     public string? Description { get; private set; }
 
-    private StyleTranslation() { } // EF
+    private StyleTranslation() { }
 
     internal StyleTranslation(string languageCode, string name, string? description)
     {
@@ -23,4 +22,3 @@ public class StyleTranslation : Entity
         Description = description;
     }
 }
-

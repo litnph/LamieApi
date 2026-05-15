@@ -1,10 +1,12 @@
-using Lamie.Application.MasterData.Tags;
+using Lamie.Application.Settings.Attributes.Tags;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lamie.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/settings/attributes/tags")]
 public sealed class TagsController : ControllerBase
 {
@@ -22,14 +24,15 @@ public sealed class TagsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetTagById(int id, CancellationToken cancellationToken)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetTagById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetTagByIdQuery(id), cancellationToken);
         return Ok(result);
     }
 
     [HttpPost]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<IActionResult> CreateTag([FromBody] CreateTagCommand command, CancellationToken cancellationToken)
     {
         var id = await _mediator.Send(command, cancellationToken);
@@ -37,17 +40,18 @@ public sealed class TagsController : ControllerBase
     }
 
     [HttpPut]
+    [Authorize(Policy = "ManagerOrAbove")]
     public async Task<IActionResult> UpdateTag([FromBody] UpdateTagCommand command, CancellationToken cancellationToken)
     {
         await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> DeleteTag(int id, CancellationToken cancellationToken)
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> DeleteTag(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeleteTagCommand(id), cancellationToken);
         return NoContent();
     }
 }
-

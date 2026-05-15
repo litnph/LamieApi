@@ -1,14 +1,12 @@
+using System.Text;
 using Lamie.API.Middlewares;
 using Lamie.Application;
-using Lamie.Application.Common.Storage;
-using Lamie.Domain.Repositories;
-using Lamie.Infrastructure.Options;
-using Lamie.Infrastructure.Persistence;
-using Lamie.Infrastructure.Persistence.Repositories;
-using Lamie.Infrastructure.Storage;
-using AutoMapper;
+using Lamie.Infrastructure;
+using Lamie.Infrastructure.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,60 +22,77 @@ builder.Services
                     kvp => kvp.Key,
                     kvp => kvp.Value!.Errors
                         .Select(e => string.IsNullOrWhiteSpace(e.ErrorMessage) ? "Invalid value" : e.ErrorMessage)
-                        .ToArray()
-                );
+                        .ToArray());
 
             return new BadRequestObjectResult(new
             {
                 success = false,
                 code = "VALIDATION_ERROR",
                 message = "Validation failed",
-                errors
+                errors,
             });
         };
     });
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// AutoMapper
-builder.Services.AddAutoMapper(
-    cfg => { },
-    typeof(Lamie.Application.AssemblyReference).Assembly);
-
-// MediatR
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(AssemblyReference).Assembly)
-);
-
-// Database
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddSwaggerGen(opts =>
 {
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("Default"),
-        x => x.MigrationsAssembly("Infrastructure")
-    );
+    opts.SwaggerDoc("v1", new OpenApiInfo { Title = "Lamie API", Version = "v1" });
 
-    options.UseSnakeCaseNamingConvention();
+    var securityScheme = new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = JwtBearerDefaults.AuthenticationScheme,
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter JWT bearer token",
+        Reference = new OpenApiReference
+        {
+            Id = JwtBearerDefaults.AuthenticationScheme,
+            Type = ReferenceType.SecurityScheme,
+        },
+    };
+
+    opts.AddSecurityDefinition(securityScheme.Reference.Id, securityScheme);
+    opts.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { securityScheme, Array.Empty<string>() },
+    });
 });
 
-// Repository
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<ITagRepository, TagRepository>();
-builder.Services.AddScoped<IColorRepository, ColorRepository>();
-builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
-builder.Services.AddScoped<IOccasionRepository, OccasionRepository>();
-builder.Services.AddScoped<IStyleRepository, StyleRepository>();
-builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
-// Supabase Storage (cho API dùng trực tiếp qua IObjectStorageService)
-builder.Services.Configure<SupabaseOptions>(
-    builder.Configuration.GetSection(SupabaseOptions.SectionName)
-);
+var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+    ?? throw new InvalidOperationException("Jwt section is missing in configuration.");
 
-// File storage abstraction cho Application (Supabase implementation)
-builder.Services.AddHttpClient<IFileStorage, SupabaseFileStorage>();
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
+            ClockSkew = TimeSpan.FromSeconds(30),
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", p => p.RequireRole("Admin"));
+    options.AddPolicy("ManagerOrAbove", p => p.RequireRole("Admin", "Manager"));
+});
 
 builder.Services.AddCors(options =>
 {
@@ -91,21 +106,21 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Middlewares (place early to catch exceptions)
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowAll");
+
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseCors("AllowAll");
 app.MapControllers();
 
 app.Run();

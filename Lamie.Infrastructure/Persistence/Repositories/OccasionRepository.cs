@@ -13,36 +13,35 @@ public class OccasionRepository : IOccasionRepository
         _context = context;
     }
 
-    public async Task<Occasion?> GetByIdAsync(int id)
+    public Task<Occasion?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Occasions
+        return _context.Occasions
             .Include(o => o.Translations)
-            .FirstOrDefaultAsync(o => o.Id == id);
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
-    public async Task<List<Occasion>> GetAllAsync()
+    public Task<List<Occasion>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Occasions
+        return _context.Occasions
             .Include(o => o.Translations)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(Occasion occasion)
+    public async Task AddAsync(Occasion occasion, CancellationToken cancellationToken = default)
     {
-        await _context.Occasions.AddAsync(occasion);
-        await _context.SaveChangesAsync();
+        await _context.Occasions.AddAsync(occasion, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Occasion occasion)
+    public async Task UpdateAsync(Occasion occasion, CancellationToken cancellationToken = default)
     {
         _context.Occasions.Update(occasion);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Occasion occasion)
+    public async Task DeleteAsync(Occasion occasion, CancellationToken cancellationToken = default)
     {
         _context.Occasions.Remove(occasion);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }
-

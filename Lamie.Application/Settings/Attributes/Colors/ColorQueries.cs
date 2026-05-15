@@ -5,12 +5,10 @@ using MediatR;
 
 namespace Lamie.Application.Settings.Attributes.Colors;
 
-// Queries
 public sealed record GetAllColorsQuery() : IRequest<List<ColorDto>>;
 
-public sealed record GetColorByIdQuery(int Id) : IRequest<ColorDto>;
+public sealed record GetColorByIdQuery(Guid Id) : IRequest<ColorDto>;
 
-// Query Handlers
 public sealed class GetAllColorsHandler : IRequestHandler<GetAllColorsQuery, List<ColorDto>>
 {
     private readonly IColorRepository _repository;
@@ -24,7 +22,7 @@ public sealed class GetAllColorsHandler : IRequestHandler<GetAllColorsQuery, Lis
 
     public async Task<List<ColorDto>> Handle(GetAllColorsQuery request, CancellationToken cancellationToken)
     {
-        var colors = await _repository.GetAllAsync();
+        var colors = await _repository.GetAllAsync(cancellationToken);
         return colors.Select(_mapper.Map<ColorDto>).ToList();
     }
 }
@@ -42,13 +40,9 @@ public sealed class GetColorByIdHandler : IRequestHandler<GetColorByIdQuery, Col
 
     public async Task<ColorDto> Handle(GetColorByIdQuery request, CancellationToken cancellationToken)
     {
-        var color = await _repository.GetByIdAsync(request.Id);
-        if (color is null)
-        {
-            throw new NotFoundException("Color", request.Id);
-        }
+        var color = await _repository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Color", request.Id);
 
         return _mapper.Map<ColorDto>(color);
     }
 }
-

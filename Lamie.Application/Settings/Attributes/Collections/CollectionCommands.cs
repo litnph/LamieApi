@@ -5,15 +5,13 @@ using MediatR;
 
 namespace Lamie.Application.Settings.Attributes.Collections;
 
-// Commands
-public sealed record CreateCollectionCommand(bool IsActive, List<CollectionTranslationInput> Translations) : IRequest<int>;
+public sealed record CreateCollectionCommand(bool IsActive, List<CollectionTranslationInput> Translations) : IRequest<Guid>;
 
-public sealed record UpdateCollectionCommand(int Id, bool IsActive, List<CollectionTranslationInput> Translations) : IRequest;
+public sealed record UpdateCollectionCommand(Guid Id, bool IsActive, List<CollectionTranslationInput> Translations) : IRequest;
 
-public sealed record DeleteCollectionCommand(int Id) : IRequest;
+public sealed record DeleteCollectionCommand(Guid Id) : IRequest;
 
-// Command Handlers
-public sealed class CreateCollectionHandler : IRequestHandler<CreateCollectionCommand, int>
+public sealed class CreateCollectionHandler : IRequestHandler<CreateCollectionCommand, Guid>
 {
     private readonly ICollectionRepository _repository;
     private readonly ILanguageRepository _languageRepository;
@@ -24,9 +22,10 @@ public sealed class CreateCollectionHandler : IRequestHandler<CreateCollectionCo
         _languageRepository = languageRepository;
     }
 
-    public async Task<int> Handle(CreateCollectionCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateCollectionCommand request, CancellationToken cancellationToken)
     {
-        await CollectionValidation.ValidateTranslationsAsync(request.Translations, _languageRepository, cancellationToken);
+        await TranslationValidation.EnsureValidAsync(
+            request.Translations, t => t.LanguageCode, t => t.Name, _languageRepository, cancellationToken);
 
         var collection = new Collection(request.IsActive);
 
@@ -35,7 +34,7 @@ public sealed class CreateCollectionHandler : IRequestHandler<CreateCollectionCo
             collection.AddOrUpdateTranslation(t.LanguageCode, t.Name, t.Description);
         }
 
-        await _repository.AddAsync(collection);
+        await _repository.AddAsync(collection, cancellationToken);
         return collection.Id;
     }
 }
@@ -53,13 +52,11 @@ public sealed class UpdateCollectionHandler : IRequestHandler<UpdateCollectionCo
 
     public async Task Handle(UpdateCollectionCommand request, CancellationToken cancellationToken)
     {
-        await CollectionValidation.ValidateTranslationsAsync(request.Translations, _languageRepository, cancellationToken);
+        await TranslationValidation.EnsureValidAsync(
+            request.Translations, t => t.LanguageCode, t => t.Name, _languageRepository, cancellationToken);
 
-        var collection = await _repository.GetByIdAsync(request.Id);
-        if (collection is null)
-        {
-            throw new NotFoundException("Collection", request.Id);
-        }
+        var collection = await _repository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Collection", request.Id);
 
         collection.SetActive(request.IsActive);
 
@@ -68,7 +65,7 @@ public sealed class UpdateCollectionHandler : IRequestHandler<UpdateCollectionCo
             collection.AddOrUpdateTranslation(t.LanguageCode, t.Name, t.Description);
         }
 
-        await _repository.UpdateAsync(collection);
+        await _repository.UpdateAsync(collection, cancellationToken);
     }
 }
 
@@ -83,60 +80,9 @@ public sealed class DeleteCollectionHandler : IRequestHandler<DeleteCollectionCo
 
     public async Task Handle(DeleteCollectionCommand request, CancellationToken cancellationToken)
     {
-        var collection = await _repository.GetByIdAsync(request.Id);
-        if (collection is null)
-        {
-            throw new NotFoundException("Collection", request.Id);
-        }
+        var collection = await _repository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Collection", request.Id);
 
-        await _repository.DeleteAsync(collection);
+        await _repository.DeleteAsync(collection, cancellationToken);
     }
 }
-
-internal static class CollectionValidation
-{
-    public static async Task ValidateTranslationsAsync(
-        IReadOnlyList<CollectionTranslationInput> translations,
-        ILanguageRepository languageRepository,
-        CancellationToken cancellationToken)
-    {
-        var errors = new Dictionary<string, string[]>();
-
-        if (translations is null || translations.Count == 0)
-        {
-            errors["translations"] = ["At least one translation is required"];
-            throw new ValidationException(errors);
-        }
-
-        for (var i = 0; i < translations.Count; i++)
-        {
-            if (string.IsNullOrWhiteSpace(translations[i].LanguageCode))
-            {
-                errors[$"translations[{i}].languageCode"] = ["LanguageCode is required"];
-            }
-
-            if (string.IsNullOrWhiteSpace(translations[i].Name))
-            {
-                errors[$"translations[{i}].name"] = ["Name is required"];
-            }
-
-            if (!string.IsNullOrWhiteSpace(translations[i].LanguageCode))
-            {
-                var exists = await languageRepository.ExistsAsync(
-                    translations[i].LanguageCode,
-                    cancellationToken);
-
-                if (!exists)
-                {
-                    errors[$"translations[{i}].languageCode"] = ["LanguageCode is not supported"];
-                }
-            }
-        }
-
-        if (errors.Count > 0)
-        {
-            throw new ValidationException(errors);
-        }
-    }
-}
-

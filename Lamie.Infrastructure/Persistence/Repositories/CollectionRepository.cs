@@ -13,36 +13,35 @@ public class CollectionRepository : ICollectionRepository
         _context = context;
     }
 
-    public async Task<Collection?> GetByIdAsync(int id)
+    public Task<Collection?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Collections
+        return _context.Collections
             .Include(c => c.Translations)
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
-    public async Task<List<Collection>> GetAllAsync()
+    public Task<List<Collection>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Collections
+        return _context.Collections
             .Include(c => c.Translations)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(Collection collection)
+    public async Task AddAsync(Collection collection, CancellationToken cancellationToken = default)
     {
-        await _context.Collections.AddAsync(collection);
-        await _context.SaveChangesAsync();
+        await _context.Collections.AddAsync(collection, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Collection collection)
+    public async Task UpdateAsync(Collection collection, CancellationToken cancellationToken = default)
     {
         _context.Collections.Update(collection);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Collection collection)
+    public async Task DeleteAsync(Collection collection, CancellationToken cancellationToken = default)
     {
         _context.Collections.Remove(collection);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }
-

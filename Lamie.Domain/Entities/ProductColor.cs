@@ -2,15 +2,13 @@ namespace Lamie.Domain.Entities;
 
 public class ProductColor : Entity
 {
-    public int Id { get; private set; }
-    public int ProductId { get; private set; }
-    public int ColorId { get; private set; }
+    public Guid ProductId { get; private set; }
+    public Guid ColorId { get; private set; }
 
-    private ProductColor() { } // EF
+    private ProductColor() { }
 
-    internal ProductColor(int colorId)
+    internal ProductColor(Guid colorId)
     {
         ColorId = colorId;
     }
 }
-

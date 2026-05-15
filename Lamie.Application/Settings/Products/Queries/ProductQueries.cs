@@ -1,19 +1,8 @@
-using MediatR;
 using Lamie.Application.Settings.Products.Dtos;
+using MediatR;
 
-namespace Lamie.Application.Settings.Products.Queries
-{
-    public class GetAllProductsQuery : IRequest<List<ProductDetailsDto>>
-    {
-    }
+namespace Lamie.Application.Settings.Products.Queries;
 
-    public class GetProductByIdQuery : IRequest<ProductDetailsDto>
-    {
-        public int Id { get; set; }
+public sealed record GetAllProductsQuery() : IRequest<List<ProductDetailsDto>>;
 
-        public GetProductByIdQuery(int id)
-        {
-            Id = id;
-        }
-    }
-}
+public sealed record GetProductByIdQuery(Guid Id) : IRequest<ProductDetailsDto>;

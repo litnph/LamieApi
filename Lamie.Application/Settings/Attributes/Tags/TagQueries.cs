@@ -3,14 +3,12 @@ using Lamie.Application.Common.Exceptions;
 using Lamie.Domain.Repositories;
 using MediatR;
 
-namespace Lamie.Application.MasterData.Tags;
+namespace Lamie.Application.Settings.Attributes.Tags;
 
-// Queries
 public sealed record GetAllTagsQuery() : IRequest<List<TagDto>>;
 
-public sealed record GetTagByIdQuery(int Id) : IRequest<TagDto>;
+public sealed record GetTagByIdQuery(Guid Id) : IRequest<TagDto>;
 
-// Query Handlers
 public sealed class GetAllTagsHandler : IRequestHandler<GetAllTagsQuery, List<TagDto>>
 {
     private readonly ITagRepository _repository;
@@ -24,7 +22,7 @@ public sealed class GetAllTagsHandler : IRequestHandler<GetAllTagsQuery, List<Ta
 
     public async Task<List<TagDto>> Handle(GetAllTagsQuery request, CancellationToken cancellationToken)
     {
-        var tags = await _repository.GetAllAsync();
+        var tags = await _repository.GetAllAsync(cancellationToken);
         return tags.Select(_mapper.Map<TagDto>).ToList();
     }
 }
@@ -42,13 +40,9 @@ public sealed class GetTagByIdHandler : IRequestHandler<GetTagByIdQuery, TagDto>
 
     public async Task<TagDto> Handle(GetTagByIdQuery request, CancellationToken cancellationToken)
     {
-        var tag = await _repository.GetByIdAsync(request.Id);
-        if (tag is null)
-        {
-            throw new NotFoundException("Tag", request.Id);
-        }
+        var tag = await _repository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Tag", request.Id);
 
         return _mapper.Map<TagDto>(tag);
     }
 }
-

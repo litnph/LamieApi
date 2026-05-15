@@ -1,10 +1,12 @@
 using Lamie.Application.Settings.Attributes.Languages;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lamie.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/settings/attributes/languages")]
 public sealed class LanguagesController : ControllerBase
 {
@@ -16,6 +18,7 @@ public sealed class LanguagesController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetLanguages(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetAllLanguagesQuery(), cancellationToken);
@@ -23,6 +26,7 @@ public sealed class LanguagesController : ControllerBase
     }
 
     [HttpGet("{code}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetLanguageByCode(string code, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetLanguageByCodeQuery(code), cancellationToken);
@@ -30,6 +34,7 @@ public sealed class LanguagesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> CreateLanguage([FromBody] CreateLanguageCommand command, CancellationToken cancellationToken)
     {
         await _mediator.Send(command, cancellationToken);
@@ -37,6 +42,7 @@ public sealed class LanguagesController : ControllerBase
     }
 
     [HttpPut]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> UpdateLanguage([FromBody] UpdateLanguageCommand command, CancellationToken cancellationToken)
     {
         await _mediator.Send(command, cancellationToken);
@@ -44,10 +50,10 @@ public sealed class LanguagesController : ControllerBase
     }
 
     [HttpDelete("{code}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> DeleteLanguage(string code, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeleteLanguageCommand(code), cancellationToken);
         return NoContent();
     }
 }
-
