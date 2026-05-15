@@ -69,6 +69,15 @@ builder.Services.AddInfrastructure(builder.Configuration);
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt section is missing in configuration.");
 
+if (!builder.Environment.IsDevelopment()
+    && (string.IsNullOrWhiteSpace(jwtOptions.SecretKey)
+        || Encoding.UTF8.GetByteCount(jwtOptions.SecretKey) < 32))
+{
+    throw new InvalidOperationException(
+        "Jwt:SecretKey must be set with at least 32 bytes of entropy. " +
+        "On Render, set the environment variable Jwt__SecretKey (Production does not use local User Secrets).");
+}
+
 builder.Services
     .AddAuthentication(options =>
     {
@@ -141,5 +150,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Render / load balancer health check (no auth).
+app.MapGet("/health", () => Results.Text("OK", "text/plain"));
 
 app.Run();
