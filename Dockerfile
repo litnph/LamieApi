@@ -1,25 +1,21 @@
-## Build stage
-## Monorepo (Render mặc định: context = gốc repo):
-##   docker build -f LamieApi/Dockerfile .
-## Chỉ thư mục LamieApi làm context:
-##   docker build --build-arg PROJECT_ROOT=. -f Dockerfile .
+## Build context phải là thư mục LamieApi (chứa Lamie.sln).
+## Render: Root Directory = LamieApi, Dockerfile Path = Dockerfile, Docker Context = .
+## Local: docker build -f LamieApi/Dockerfile LamieApi
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG PROJECT_ROOT=LamieApi
 WORKDIR /src
 
-COPY ${PROJECT_ROOT}/Lamie.sln ./
-COPY ${PROJECT_ROOT}/Lamie.API/Lamie.API.csproj ./Lamie.API/
-COPY ${PROJECT_ROOT}/Lamie.Application/Lamie.Application.csproj ./Lamie.Application/
-COPY ${PROJECT_ROOT}/Lamie.Domain/Lamie.Domain.csproj ./Lamie.Domain/
-COPY ${PROJECT_ROOT}/Lamie.Infrastructure/Lamie.Infrastructure.csproj ./Lamie.Infrastructure/
-COPY ${PROJECT_ROOT}/Lamie.Shared/Lamie.Shared.csproj ./Lamie.Shared/
+COPY Lamie.sln ./
+COPY Lamie.API/Lamie.API.csproj Lamie.API/
+COPY Lamie.Application/Lamie.Application.csproj Lamie.Application/
+COPY Lamie.Domain/Lamie.Domain.csproj Lamie.Domain/
+COPY Lamie.Infrastructure/Lamie.Infrastructure.csproj Lamie.Infrastructure/
+COPY Lamie.Shared/Lamie.Shared.csproj Lamie.Shared/
 
 RUN dotnet restore "./Lamie.sln"
 
-COPY ${PROJECT_ROOT}/ .
+COPY . .
 RUN dotnet publish "Lamie.API/Lamie.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-## Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
