@@ -3,7 +3,10 @@ using Lamie.API.Middlewares;
 using Lamie.Application;
 using Lamie.Infrastructure;
 using Lamie.Infrastructure.Auth;
+using Lamie.Infrastructure.Persistence;
+using Lamie.Infrastructure.Persistence.Interceptors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
@@ -65,6 +68,24 @@ builder.Services.AddSwaggerGen(opts =>
 });
 
 builder.Services.AddApplication();
+
+// Database
+builder.Services.AddScoped<AuditInterceptor>();
+builder.Services.AddScoped<OrderAuditInterceptor>();
+
+builder.Services.AddDbContext<AppDbContext>((sp, options) =>
+{
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("Default"),
+        x => x.MigrationsAssembly("Lamie.Infrastructure"));
+
+    options.UseSnakeCaseNamingConvention();
+
+    options.AddInterceptors(
+        sp.GetRequiredService<AuditInterceptor>(),
+        sp.GetRequiredService<OrderAuditInterceptor>());
+});
+
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
