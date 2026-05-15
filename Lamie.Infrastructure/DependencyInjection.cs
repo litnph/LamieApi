@@ -69,8 +69,8 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Uses <c>ConnectionStrings:Default</c> when non-empty; otherwise <c>DATABASE_URL</c>
-    /// (Render and other hosts inject this when PostgreSQL is linked).
+    /// Uses <c>ConnectionStrings:Default</c> when non-empty; otherwise common database URL
+    /// environment variables (see <see cref="GetDatabaseUrlFromEnvironment"/>).
     /// </summary>
     private static string ResolvePostgreSqlConnectionString(IConfiguration configuration)
     {
@@ -78,12 +78,13 @@ public static class DependencyInjection
         if (!string.IsNullOrWhiteSpace(fromConfig))
             return fromConfig;
 
-        var databaseUrl = configuration["DATABASE_URL"];
+        var databaseUrl = GetDatabaseUrlFromEnvironment(configuration);
         if (string.IsNullOrWhiteSpace(databaseUrl))
         {
             throw new InvalidOperationException(
-                "PostgreSQL is not configured. Set ConnectionStrings__Default to your connection string, " +
-                "or link a Render PostgreSQL instance so DATABASE_URL is injected.");
+                "PostgreSQL is not configured. On your Render Web Service (the service that runs this API), add an environment variable: " +
+                "either DATABASE_URL, or ConnectionStrings__Default, with the value from your Render Postgres → Info → Internal Database URL " +
+                "(postgresql://...). Render does not inject DATABASE_URL automatically unless you define it in render.yaml (fromDatabase) or add it manually.");
         }
 
         try
@@ -93,7 +94,34 @@ public static class DependencyInjection
         catch (Exception ex)
         {
             throw new InvalidOperationException(
-                "DATABASE_URL is set but could not be parsed as a PostgreSQL connection string or URI.", ex);
+                "The database URL environment variable is set but could not be parsed as a PostgreSQL connection string or URI.", ex);
         }
+    }
+
+    /// <summary>
+    /// Reads common env var names from <see cref="IConfiguration"/> and from the process environment.
+    /// </summary>
+    private static string? GetDatabaseUrlFromEnvironment(IConfiguration configuration)
+    {
+        string[] keys =
+        [
+            "DATABASE_URL",
+            "POSTGRES_URL",
+            "POSTGRESQL_URL",
+            "POSTGRES_PRISMA_URL",
+        ];
+
+        foreach (var key in keys)
+        {
+            var value = configuration[key];
+            if (!string.IsNullOrWhiteSpace(value))
+                return value;
+
+            value = Environment.GetEnvironmentVariable(key);
+            if (!string.IsNullOrWhiteSpace(value))
+                return value;
+        }
+
+        return null;
     }
 }
