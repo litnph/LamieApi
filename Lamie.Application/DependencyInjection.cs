@@ -1,3 +1,4 @@
+using AutoMapper;
 using FluentValidation;
 using Lamie.Application.Common.Behaviors;
 using MediatR;
@@ -11,7 +12,7 @@ public static class DependencyInjection
     {
         var assembly = typeof(DependencyInjection).Assembly;
 
-        services.AddAutoMapper(_ => { }, assembly);
+        services.AddAutoMapper(cfg => cfg.LicenseKey = string.Empty, assembly);
 
         services.AddValidatorsFromAssembly(assembly);
 

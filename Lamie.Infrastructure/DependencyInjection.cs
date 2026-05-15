@@ -74,12 +74,11 @@ public static class DependencyInjection
     /// </summary>
     private static string ResolvePostgreSqlConnectionString(IConfiguration configuration)
     {
-        var fromConfig = configuration.GetConnectionString("Default");
-        if (!string.IsNullOrWhiteSpace(fromConfig))
-            return fromConfig;
+        var raw = configuration.GetConnectionString("Default");
+        if (string.IsNullOrWhiteSpace(raw))
+            raw = GetDatabaseUrlFromEnvironment(configuration);
 
-        var databaseUrl = GetDatabaseUrlFromEnvironment(configuration);
-        if (string.IsNullOrWhiteSpace(databaseUrl))
+        if (string.IsNullOrWhiteSpace(raw))
         {
             throw new InvalidOperationException(
                 "PostgreSQL is not configured. On your Render Web Service (the service that runs this API), add an environment variable: " +
@@ -89,14 +88,87 @@ public static class DependencyInjection
 
         try
         {
-            return new NpgsqlConnectionStringBuilder(databaseUrl.Trim()).ConnectionString;
+            return ToNpgsqlConnectionString(raw.Trim());
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException(
-                "The database URL environment variable is set but could not be parsed as a PostgreSQL connection string or URI.", ex);
+                "The PostgreSQL connection string or URI could not be parsed for Npgsql.", ex);
         }
     }
+
+    /// <summary>
+    /// ADO.NET treats ';' and '=' specially; a <c>postgresql://...?sslmode=require&amp;...</c> URI must not be passed
+    /// verbatim to <see cref="NpgsqlConnection"/> — convert to an Npgsql key/value connection string.
+    /// </summary>
+    private static string ToNpgsqlConnectionString(string raw)
+    {
+        if (!raw.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase)
+            && !raw.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+            return new NpgsqlConnectionStringBuilder(raw).ConnectionString;
+
+        var uri = new Uri(raw);
+        var userInfo = uri.UserInfo.Split(':', 2);
+        var username = Uri.UnescapeDataString(userInfo[0]);
+        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+
+        var path = uri.AbsolutePath.TrimStart('/');
+        var dbQuerySplit = path.IndexOf('?', StringComparison.Ordinal);
+        var database = dbQuerySplit >= 0 ? path[..dbQuerySplit] : path;
+
+        var query = ParsePostgresUriQuery(uri.Query);
+
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = uri.Host,
+            Port = uri.Port > 0 ? uri.Port : 5432,
+            Username = username,
+            Password = password,
+            Database = database,
+        };
+
+        if (query.TryGetValue("sslmode", out var sslMode))
+            builder.SslMode = ParseSslMode(sslMode);
+        else
+            builder.SslMode = SslMode.Require;
+
+        if (query.TryGetValue("channel_binding", out var channelBinding)
+            && channelBinding.Equals("require", StringComparison.OrdinalIgnoreCase))
+            builder.ChannelBinding = ChannelBinding.Require;
+
+        return builder.ConnectionString;
+    }
+
+    private static Dictionary<string, string> ParsePostgresUriQuery(string query)
+    {
+        var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrEmpty(query) || query == "?")
+            return d;
+
+        var trimmed = query.StartsWith("?", StringComparison.Ordinal) ? query[1..] : query;
+        foreach (var segment in trimmed.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var eq = segment.IndexOf('=');
+            if (eq <= 0)
+                continue;
+
+            d[Uri.UnescapeDataString(segment[..eq])] = Uri.UnescapeDataString(segment[(eq + 1)..]);
+        }
+
+        return d;
+    }
+
+    private static SslMode ParseSslMode(string value) =>
+        value.ToLowerInvariant() switch
+        {
+            "disable" => SslMode.Disable,
+            "allow" => SslMode.Allow,
+            "prefer" => SslMode.Prefer,
+            "require" => SslMode.Require,
+            "verify-ca" or "verifyca" => SslMode.VerifyCA,
+            "verify-full" or "verifyfull" => SslMode.VerifyFull,
+            _ => SslMode.Require,
+        };
 
     /// <summary>
     /// Reads common env var names from <see cref="IConfiguration"/> and from the process environment.

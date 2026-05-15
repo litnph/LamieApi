@@ -68,6 +68,9 @@ namespace Lamie.API.Middlewares
             }
             catch (Exception ex)
             {
+#if !DEBUG
+                _ = ex;
+#endif
                 if (context.Response.HasStarted)
                 {
                     throw;
