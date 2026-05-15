@@ -13,6 +13,7 @@ using Lamie.Shared.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace Lamie.Infrastructure;
 
@@ -32,8 +33,9 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
+            var connectionString = ResolvePostgreSqlConnectionString(configuration);
             options.UseNpgsql(
-                configuration.GetConnectionString("Default"),
+                connectionString,
                 npg => npg.MigrationsAssembly(typeof(AppDbContext).Assembly.GetName().Name));
 
             options.UseSnakeCaseNamingConvention();
@@ -64,5 +66,34 @@ public static class DependencyInjection
         services.AddHostedService<DataSeederHostedService>();
 
         return services;
+    }
+
+    /// <summary>
+    /// Uses <c>ConnectionStrings:Default</c> when non-empty; otherwise <c>DATABASE_URL</c>
+    /// (Render and other hosts inject this when PostgreSQL is linked).
+    /// </summary>
+    private static string ResolvePostgreSqlConnectionString(IConfiguration configuration)
+    {
+        var fromConfig = configuration.GetConnectionString("Default");
+        if (!string.IsNullOrWhiteSpace(fromConfig))
+            return fromConfig;
+
+        var databaseUrl = configuration["DATABASE_URL"];
+        if (string.IsNullOrWhiteSpace(databaseUrl))
+        {
+            throw new InvalidOperationException(
+                "PostgreSQL is not configured. Set ConnectionStrings__Default to your connection string, " +
+                "or link a Render PostgreSQL instance so DATABASE_URL is injected.");
+        }
+
+        try
+        {
+            return new NpgsqlConnectionStringBuilder(databaseUrl.Trim()).ConnectionString;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                "DATABASE_URL is set but could not be parsed as a PostgreSQL connection string or URI.", ex);
+        }
     }
 }
